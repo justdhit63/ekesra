@@ -1,0 +1,8 @@
+@import "tailwindcss";
+@tailwind utilities;
+
+html {
+    /* Default browser font-size adalah 16px.
+       Kita ubah menjadi 12px untuk mendapatkan efek zoom 75%. */
+    font-size: 12px;
+  }
