@@ -141,7 +141,7 @@ function Sidebar({ isOpen, toggle }) {
                       )}
                       </li>
                       <li>
-                      <button onClick={() => setIsPkOpen(!isPkOpen)} className="w-full flex justify-between items-center p-3 my-1 rounded-md hover:bg-blue-800 transition-colors text-sm">
+                      <button onClick={() => setIsPkOpen(!isPkOpen)} className="w-full flex justify-between items-center p-3 my-1 rounded-md hover:bg-green-800 transition-colors text-sm">
                         <div className="flex items-center justify-center">
                         <FaFileSignature size={20} className={isOpen ? 'mr-3' : 'mx-2'} />
                         {isOpen && <span>Perjanjian Kinerja</span>}
@@ -149,26 +149,26 @@ function Sidebar({ isOpen, toggle }) {
                         {isOpen && <FaChevronDown className={`transition-transform duration-200 ${isPkOpen ? 'rotate-180' : ''}`} />}
                       </button>
                       {isOpen && isPkOpen && (
-                        <ul className="pl-8 py-1 bg-blue-700 rounded-md pr-2">
+                        <ul className="pl-8 py-1 bg-green-700 rounded-md pr-2">
                         <li>
-                          <button onClick={() => setIsTargetPkSasaranOpen(!isTargetPkSasaranOpen)} className="w-full flex justify-between items-center p-2 my-1 rounded-md hover:bg-blue-800 transition-colors text-sm">
+                          <button onClick={() => setIsTargetPkSasaranOpen(!isTargetPkSasaranOpen)} className="w-full flex justify-between items-center p-2 my-1 rounded-md hover:bg-green-800 transition-colors text-sm">
                           <span>Target PK Indikator Sasaran</span>
                           <FaChevronDown className={`transition-transform duration-200 ${isTargetPkSasaranOpen ? 'rotate-180' : ''}`} />
                           </button>
                           {isTargetPkSasaranOpen && (
                           <ul className="pl-4 py-1 text-xs">
-                            <li><NavLink to="/pk/sasaran/tahunan" className="block p-2 rounded-md hover:bg-blue-800">Tahunan</NavLink></li>
-                            <li><NavLink to="#" className="block p-2 rounded-md hover:bg-blue-800 text-gray-400">Triwulan</NavLink></li>
+                            <li><NavLink to="/pk/sasaran/tahunan" className="block p-2 rounded-md hover:bg-green-800">Tahunan</NavLink></li>
+                            <li><NavLink to="#" className="block p-2 rounded-md hover:bg-green-800 text-gray-400">Triwulan</NavLink></li>
                           </ul>
                           )}
                         </li>
                         <li>
-                          <NavLink to="/pk/program/tahunan" style={({ isActive }) => isActive ? activeLinkStyle : undefined} className="block p-2 rounded-md hover:bg-blue-800 transition-colors text-sm">
+                          <NavLink to="/pk/program/tahunan" style={({ isActive }) => isActive ? activeLinkStyle : undefined} className="block p-2 rounded-md hover:bg-green-800 transition-colors text-sm">
                           Target PK Indikator Program
                           </NavLink>
                         </li>
                         <li>
-                          <NavLink to="/pk/kegiatan/tahunan" style={({ isActive }) => isActive ? activeLinkStyle : undefined} className="block p-2 rounded-md hover:bg-blue-800 transition-colors text-sm">
+                          <NavLink to="/pk/kegiatan/tahunan" style={({ isActive }) => isActive ? activeLinkStyle : undefined} className="block p-2 rounded-md hover:bg-green-800 transition-colors text-sm">
                           Target PK Indikator Kegiatan
                           </NavLink>
                         </li>
@@ -184,6 +184,16 @@ function Sidebar({ isOpen, toggle }) {
                       >
                         <FaChartBar size={20} className={isOpen ? 'mr-3' : 'mx-auto'} />
                         {isOpen && <span>Laporan</span>}
+                      </NavLink>
+                      </li>
+                      <li>
+                      <NavLink
+                        to="/pohon-kinerja"
+                        style={({ isActive }) => isActive ? activeLinkStyle : undefined}
+                        className="flex items-center p-3 my-1 rounded-md hover:bg-green-800 transition-colors text-sm"
+                      >
+                        <FaChartBar size={20} className={isOpen ? 'mr-3' : 'mx-auto'} />
+                        {isOpen && <span>Pohon Kinerja</span>}
                       </NavLink>
                       </li>
                     </ul>

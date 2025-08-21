@@ -46,6 +46,7 @@ import PKTahunanSasaranPage from './pages/PKTahunanSasaranPage';
 import PKTahunanProgramPage from './pages/PKTahunanProgramPage';
 import PKTahunanKegiatanPage from './pages/PKTahunanKegiatanPage';
 import LaporanRenstraPage from './pages/LaporanRenstraPage';
+import PohonKinerjaPage from './pages/PohonKinerjaPage';
 
 // Buat halaman placeholder untuk contoh
 const LaporanPage = () => <div><h1>Halaman Laporan</h1></div>;
@@ -454,6 +455,14 @@ function App() {
             <Layout>
               <LaporanRenstraPage />
             </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pohon-kinerja"
+        element={
+          <ProtectedRoute session={session}>
+            <Layout><PohonKinerjaPage /></Layout>
           </ProtectedRoute>
         }
       />
