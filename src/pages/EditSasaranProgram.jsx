@@ -24,19 +24,23 @@ function EditSasaranProgramPage() {
   const navigate = useNavigate();
 
   // State
+  const [perangkatDaerahList, setPerangkatDaerahList] = useState([]);
   const [programList, setProgramList] = useState([]);
+  
+  const [selectedDaerahId, setSelectedDaerahId] = useState('');
   const [selectedProgramId, setSelectedProgramId] = useState('');
   const [deskripsiSasaranProgram, setDeskripsiSasaranProgram] = useState('');
   const [indicators, setIndicators] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Mengambil data yang ada untuk di-edit
   useEffect(() => {
     const fetchData = async () => {
-      // 1. Ambil data spesifik yang akan diedit
+      // Mengambil data sasaran program beserta induknya (program)
       const { data: sasaranProgramData, error } = await supabase
         .from('renstra_sasaran_program')
-        .select(`*, renstra_indikator_sasaran_program(*)`)
+        .select(`*, renstra_program(*), renstra_indikator_sasaran_program(*)`)
         .eq('id', id)
         .single();
 
@@ -46,22 +50,54 @@ function EditSasaranProgramPage() {
         return;
       }
 
-      // 2. Isi state form dengan data yang ada
-      setSelectedProgramId(sasaranProgramData.program_id);
+      // Mengisi state form dengan data yang ada
       setDeskripsiSasaranProgram(sasaranProgramData.deskripsi_sasaran_program);
+      setSelectedProgramId(sasaranProgramData.program_id);
       setIndicators(sasaranProgramData.renstra_indikator_sasaran_program.length > 0 
         ? sasaranProgramData.renstra_indikator_sasaran_program 
         : [{ ...initialIndicatorState }]);
 
-      // 3. Ambil daftar program untuk dropdown
-      const { data: programs } = await supabase.from('renstra_program').select('*');
-      if(programs) setProgramList(programs);
+      // Mengambil data untuk mengisi dropdown
+      const { data: pdData } = await supabase.from('perangkat_daerah').select('*');
+      if (pdData) setPerangkatDaerahList(pdData);
+      
+      // Mengambil ID Perangkat Daerah dari data induk untuk set dropdown awal
+      if (sasaranProgramData.renstra_program) {
+        const { data: sasaranInduk } = await supabase
+          .from('renstra_sasaran')
+          .select('renstra_tujuan(perangkat_daerah_id)')
+          .eq('id', sasaranProgramData.renstra_program.sasaran_id)
+          .single();
+        
+        if (sasaranInduk) {
+          const pdId = sasaranInduk.renstra_tujuan.perangkat_daerah_id;
+          setSelectedDaerahId(pdId);
+          // Mengambil daftar program yang relevan untuk dropdown
+          const { data: programs } = await supabase.rpc('get_program_by_pd_simple', { pd_id: pdId });
+          if (programs) setProgramList(programs);
+        }
+      }
 
       setLoading(false);
     };
 
     fetchData();
   }, [id, navigate]);
+
+  // Mengambil daftar Program baru jika Perangkat Daerah diubah
+  useEffect(() => {
+    if (!selectedDaerahId || loading) return;
+    const fetchPrograms = async () => {
+      const { data } = await supabase.rpc('get_program_by_pd_simple', { pd_id: selectedDaerahId });
+      setProgramList(data || []);
+      // Reset pilihan program jika tidak ada di daftar baru
+      if (!data?.find(p => p.id === selectedProgramId)) {
+        setSelectedProgramId('');
+      }
+    };
+    fetchPrograms();
+  }, [selectedDaerahId, loading]);
+
 
   const handleIndicatorChange = (index, event) => {
     const values = [...indicators];
@@ -86,7 +122,6 @@ function EditSasaranProgramPage() {
     e.preventDefault();
     setSaving(true);
 
-    // Update data induk
     const { error: sasaranError } = await supabase
         .from('renstra_sasaran_program')
         .update({ program_id: selectedProgramId, deskripsi_sasaran_program: deskripsiSasaranProgram })
@@ -98,7 +133,6 @@ function EditSasaranProgramPage() {
         return;
     }
 
-    // Hapus indikator lama dan masukkan ulang yang baru
     await supabase.from('renstra_indikator_sasaran_program').delete().eq('sasaran_program_id', id);
 
     const indicatorsToInsert = indicators.map(({ id: indicatorId, ...rest }) => ({ ...rest, sasaran_program_id: id }));
@@ -119,34 +153,41 @@ function EditSasaranProgramPage() {
     <div>
       <h1 className="text-xl font-bold text-gray-800 mb-4">Form Edit Renstra Sasaran Program</h1>
       <form onSubmit={handleUpdate} className="bg-white p-6 rounded-lg shadow-md space-y-6">
-        <div>
-            <label className="block text-sm font-medium text-gray-700">Program PD</label>
-            <select value={selectedProgramId} onChange={e => setSelectedProgramId(e.target.value)} required className="w-full border p-2 rounded mt-1">
-                <option value="">Pilih Program</option>
-                {programList.map(prog => <option key={prog.id} value={prog.id}>{prog.deskripsi_program}</option>)}
-            </select>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Perangkat Daerah</label>
+                <select value={selectedDaerahId} onChange={e => setSelectedDaerahId(e.target.value)} required className="w-full border p-2 rounded mt-1">
+                    <option value="">Pilih PD</option>
+                    {perangkatDaerahList.map(pd => <option key={pd.id} value={pd.id}>{pd.nama_daerah}</option>)}
+                </select>
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Program PD</label>
+                <select value={selectedProgramId} onChange={e => setSelectedProgramId(e.target.value)} required disabled={!selectedDaerahId} className="w-full border p-2 rounded mt-1">
+                    <option value="">Pilih Program</option>
+                    {programList.map(prog => <option key={prog.id} value={prog.id}>{prog.deskripsi_program}</option>)}
+                </select>
+            </div>
         </div>
         <div>
             <label className="block text-sm font-medium text-gray-700">Sasaran Program</label>
             <textarea value={deskripsiSasaranProgram} onChange={e => setDeskripsiSasaranProgram(e.target.value)} required className="w-full border p-2 rounded mt-1" rows="3"></textarea>
         </div>
         
-        {/* Form untuk Indikator Dinamis */}
         <div className="space-y-4">
           <h3 className="text-lg font-medium text-gray-800">Indikator Sasaran Program</h3>
           {indicators.map((indicator, index) => (
-            <div key={index} className="bg-gray-50 p-4 rounded-md border relative">
+            <div key={indicator.id || index} className="bg-gray-50 p-4 rounded-md border relative">
               <button type="button" onClick={() => handleRemoveIndicator(index)} className="absolute top-2 right-2 text-red-500 hover:text-red-700">
                 <FaTrash />
               </button>
-              {/* Salin JSX untuk input indikator dari TambahSasaranProgramPage.jsx ke sini */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                 <input type="text" name="deskripsi_indikator" placeholder="Indikator sasaran *" value={indicator.deskripsi_indikator || ''} onChange={e => handleIndicatorChange(index, e)} required className="border p-2 rounded-md" />
                 <div className="grid grid-cols-2 gap-4">
                   <input type="text" name="satuan" placeholder="Satuan *" value={indicator.satuan || ''} onChange={e => handleIndicatorChange(index, e)} required className="border p-2 rounded-md" />
                   <div className="flex items-center space-x-4">
-                      <label className="flex items-center space-x-2 text-sm"><input type="checkbox" name="pk" checked={indicator.pk} onChange={e => handleIndicatorChange(index, e)} /><span>PK</span></label>
-                      <label className="flex items-center space-x-2 text-sm"><input type="checkbox" name="ir" checked={indicator.ir} onChange={e => handleIndicatorChange(index, e)} /><span>IR</span></label>
+                      <label className="flex items-center space-x-2 text-sm"><input type="checkbox" name="pk" checked={indicator.pk || false} onChange={e => handleIndicatorChange(index, e)} /><span>PK</span></label>
+                      <label className="flex items-center space-x-2 text-sm"><input type="checkbox" name="ir" checked={indicator.ir || false} onChange={e => handleIndicatorChange(index, e)} /><span>IR</span></label>
                   </div>
                 </div>
               </div>
@@ -172,7 +213,7 @@ function EditSasaranProgramPage() {
         </div>
 
         <div className="flex justify-end space-x-4">
-            <Link to="/renstra/program/sasaran" className="bg-gray-200 py-2 px-4 rounded">Cancel</Link>
+            <Link to="/renstra/program/sasaran" className="bg-gray-200 py-2 px-4 rounded">Batal</Link>
             <button type="submit" disabled={saving} className="bg-blue-600 text-white py-2 px-4 rounded">{saving ? 'Memperbarui...' : 'Update'}</button>
         </div>
       </form>

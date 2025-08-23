@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { FaHome, FaChartBar, FaCog, FaChevronDown, FaFileAlt, FaSignOutAlt, FaBook, FaClipboardList, FaBars, FaFileSignature } from 'react-icons/fa';
+import { FaHome, FaChartBar, FaCog, FaChevronDown, FaFileAlt, FaSignOutAlt, FaBook, FaClipboardList, FaBars, FaFileSignature, FaLandmark } from 'react-icons/fa';
 import { supabase } from '../lib/supabaseClient'; // Impor untuk logout
 
 function Sidebar({ isOpen, toggle }) {
   const [isRenstraOpen, setIsRenstraOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSasaranOpen, setIsSasaranOpen] = useState(false);
   const [isProgramOpen, setIsProgramOpen] = useState(false);
   const [isKegiatanOpen, setIsKegiatanOpen] = useState(false);
   const [isSubKegiatanOpen, setIsSubKegiatanOpen] = useState(false);
   const [isPkOpen, setIsPkOpen] = useState(false);
   const [isTargetPkSasaranOpen, setIsTargetPkSasaranOpen] = useState(false);
+  const [isRpdOpen, setIsRpdOpen] = useState(false);
 
   // Style untuk NavLink yang aktif
   const activeLinkStyle = {
@@ -48,6 +48,28 @@ function Sidebar({ isOpen, toggle }) {
             </NavLink>
           </li>
           <div className="border border-green-800 w-3/4 mx-auto my-4"></div>
+          <li>
+            <NavLink
+              to="/tambah-perangkat-daerah"
+              style={({ isActive }) => isActive ? activeLinkStyle : undefined}
+              className="flex items-center p-3 my-1 rounded-md hover:bg-green-800 transition-colors"
+            >
+              <FaHome size={20} className={isOpen ? 'mr-3' : 'mx-auto'} />
+              {isOpen && <span>Perangkat Daerah</span>}
+            </NavLink>
+          </li>
+          <li>
+            <button onClick={() => setIsRpdOpen(!isRpdOpen)} className="w-full flex justify-between items-center p-3 my-1 rounded-md hover:bg-green-800">
+              <div className="flex items-center"><FaLandmark className="mr-3" />RPD</div>
+              <FaChevronDown className={`transition-transform duration-200 ${isRpdOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {isRpdOpen && (
+              <ul className="pl-4 py-1">
+                <li><NavLink to="/rpd/tujuan" className="block p-2 rounded-md hover:bg-green-800 text-sm">Tujuan RPD</NavLink></li>
+                <li><NavLink to="/rpd/sasaran" className="block p-2 rounded-md hover:bg-green-800 text-sm">Sasaran RPD</NavLink></li>
+              </ul>
+            )}
+          </li>
           <li>
             <button
               onClick={() => setIsRenstraOpen(!isRenstraOpen)}
@@ -137,69 +159,69 @@ function Sidebar({ isOpen, toggle }) {
                     </ul>
                   )}
                 </li>
-                        </ul>
-                      )}
-                      </li>
-                      <li>
-                      <button onClick={() => setIsPkOpen(!isPkOpen)} className="w-full flex justify-between items-center p-3 my-1 rounded-md hover:bg-green-800 transition-colors text-sm">
-                        <div className="flex items-center justify-center">
-                        <FaFileSignature size={20} className={isOpen ? 'mr-3' : 'mx-2'} />
-                        {isOpen && <span>Perjanjian Kinerja</span>}
-                        </div>
-                        {isOpen && <FaChevronDown className={`transition-transform duration-200 ${isPkOpen ? 'rotate-180' : ''}`} />}
-                      </button>
-                      {isOpen && isPkOpen && (
-                        <ul className="pl-8 py-1 bg-green-700 rounded-md pr-2">
-                        <li>
-                          <button onClick={() => setIsTargetPkSasaranOpen(!isTargetPkSasaranOpen)} className="w-full flex justify-between items-center p-2 my-1 rounded-md hover:bg-green-800 transition-colors text-sm">
-                          <span>Target PK Indikator Sasaran</span>
-                          <FaChevronDown className={`transition-transform duration-200 ${isTargetPkSasaranOpen ? 'rotate-180' : ''}`} />
-                          </button>
-                          {isTargetPkSasaranOpen && (
-                          <ul className="pl-4 py-1 text-xs">
-                            <li><NavLink to="/pk/sasaran/tahunan" className="block p-2 rounded-md hover:bg-green-800">Tahunan</NavLink></li>
-                            <li><NavLink to="#" className="block p-2 rounded-md hover:bg-green-800 text-gray-400">Triwulan</NavLink></li>
-                          </ul>
-                          )}
-                        </li>
-                        <li>
-                          <NavLink to="/pk/program/tahunan" style={({ isActive }) => isActive ? activeLinkStyle : undefined} className="block p-2 rounded-md hover:bg-green-800 transition-colors text-sm">
-                          Target PK Indikator Program
-                          </NavLink>
-                        </li>
-                        <li>
-                          <NavLink to="/pk/kegiatan/tahunan" style={({ isActive }) => isActive ? activeLinkStyle : undefined} className="block p-2 rounded-md hover:bg-green-800 transition-colors text-sm">
-                          Target PK Indikator Kegiatan
-                          </NavLink>
-                        </li>
-                        {/* Item menu PK lainnya bisa ditambahkan di sini */}
-                        </ul>
-                      )}
-                      </li>
-                      <li>
-                      <NavLink
-                        to="/laporan"
-                        style={({ isActive }) => isActive ? activeLinkStyle : undefined}
-                        className="flex items-center p-3 my-1 rounded-md hover:bg-green-800 transition-colors text-sm"
-                      >
-                        <FaChartBar size={20} className={isOpen ? 'mr-3' : 'mx-auto'} />
-                        {isOpen && <span>Laporan</span>}
-                      </NavLink>
-                      </li>
-                      <li>
-                      <NavLink
-                        to="/pohon-kinerja"
-                        style={({ isActive }) => isActive ? activeLinkStyle : undefined}
-                        className="flex items-center p-3 my-1 rounded-md hover:bg-green-800 transition-colors text-sm"
-                      >
-                        <FaChartBar size={20} className={isOpen ? 'mr-3' : 'mx-auto'} />
-                        {isOpen && <span>Pohon Kinerja</span>}
-                      </NavLink>
-                      </li>
+              </ul>
+            )}
+          </li>
+          <li>
+            <button onClick={() => setIsPkOpen(!isPkOpen)} className="w-full flex justify-between items-center p-3 my-1 rounded-md hover:bg-green-800 transition-colors text-sm">
+              <div className="flex items-center justify-center">
+                <FaFileSignature size={20} className={isOpen ? 'mr-3' : 'mx-2'} />
+                {isOpen && <span>Perjanjian Kinerja</span>}
+              </div>
+              {isOpen && <FaChevronDown className={`transition-transform duration-200 ${isPkOpen ? 'rotate-180' : ''}`} />}
+            </button>
+            {isOpen && isPkOpen && (
+              <ul className="pl-8 py-1 bg-green-700 rounded-md pr-2">
+                <li>
+                  <button onClick={() => setIsTargetPkSasaranOpen(!isTargetPkSasaranOpen)} className="w-full flex justify-between items-center p-2 my-1 rounded-md hover:bg-green-800 transition-colors text-sm">
+                    <span>Target PK Indikator Sasaran</span>
+                    <FaChevronDown className={`transition-transform duration-200 ${isTargetPkSasaranOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {isTargetPkSasaranOpen && (
+                    <ul className="pl-4 py-1 text-xs">
+                      <li><NavLink to="/pk/sasaran/tahunan" className="block p-2 rounded-md hover:bg-green-800">Tahunan</NavLink></li>
+                      <li><NavLink to="#" className="block p-2 rounded-md hover:bg-green-800 text-gray-400">Triwulan</NavLink></li>
                     </ul>
-                    </nav>
+                  )}
+                </li>
+                <li>
+                  <NavLink to="/pk/program/tahunan" style={({ isActive }) => isActive ? activeLinkStyle : undefined} className="block p-2 rounded-md hover:bg-green-800 transition-colors text-sm">
+                    Target PK Indikator Program
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink to="/pk/kegiatan/tahunan" style={({ isActive }) => isActive ? activeLinkStyle : undefined} className="block p-2 rounded-md hover:bg-green-800 transition-colors text-sm">
+                    Target PK Indikator Kegiatan
+                  </NavLink>
+                </li>
+                {/* Item menu PK lainnya bisa ditambahkan di sini */}
+              </ul>
+            )}
+          </li>
+          <li>
+            <NavLink
+              to="/laporan"
+              style={({ isActive }) => isActive ? activeLinkStyle : undefined}
+              className="flex items-center p-3 my-1 rounded-md hover:bg-green-800 transition-colors text-sm"
+            >
+              <FaChartBar size={20} className={isOpen ? 'mr-3' : 'mx-auto'} />
+              {isOpen && <span>Laporan</span>}
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/pohon-kinerja"
+              style={({ isActive }) => isActive ? activeLinkStyle : undefined}
+              className="flex items-center p-3 my-1 rounded-md hover:bg-green-800 transition-colors text-sm"
+            >
+              <FaChartBar size={20} className={isOpen ? 'mr-3' : 'mx-auto'} />
+              {isOpen && <span>Pohon Kinerja</span>}
+            </NavLink>
+          </li>
+        </ul>
+      </nav>
 
-                    {/* Footer / Logout Button */}
+      {/* Footer / Logout Button */}
       <div className="p-4 border-t border-green-800">
         <button
           onClick={handleLogout}

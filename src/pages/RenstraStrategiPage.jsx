@@ -20,21 +20,22 @@ function RenstraStrategiPage() {
     fetchPerangkatDaerah();
   }, []);
 
+  // <-- DIUBAH: Menggunakan fungsi RPC yang baru dan benar -->
   const fetchSasaranDanStrategi = async () => {
     if (!selectedDaerahId) return;
     setLoading(true);
-    // Query bersarang untuk mengambil sasaran dan strateginya
-    const { data, error } = await supabase
-      .from('renstra_sasaran')
-      .select(`
-        id,
-        deskripsi_sasaran,
-        renstra_strategi ( id, deskripsi_strategi )
-      `)
-      .eq('perangkat_daerah_id', selectedDaerahId);
+    
+    // Panggil fungsi PostgreSQL yang sudah kita buat
+    const { data, error } = await supabase.rpc('get_strategi_by_pd', {
+      pd_id: selectedDaerahId
+    });
 
-    if (data) setSasaranData(data);
-    else console.error(error);
+    if (data) {
+      setSasaranData(data);
+    } else {
+      setSasaranData([]);
+      console.error(error);
+    }
     setLoading(false);
   };
 
@@ -48,7 +49,7 @@ function RenstraStrategiPage() {
 
       <div className="bg-white p-6 rounded-lg shadow-md mb-6">
         <div className="flex items-center justify-between">
-          <div className="w-1/2 mb-6">
+          <div className="w-full md:w-1/2 mb-6">
             <label className="block text-sm font-medium text-gray-700">Perangkat Daerah</label>
             <select
               value={selectedDaerahId}
@@ -60,18 +61,22 @@ function RenstraStrategiPage() {
               ))}
             </select>
           </div>
-          <h1 className='text-lg font-medium'>Renstra Strategi Periode 2025-2029</h1>
+          <h1 className='text-lg font-medium hidden md:block'>Renstra Strategi Periode 2025-2029</h1>
         </div>
 
-        {loading ? <p>Loading...</p> : (
+        {loading ? <p className="text-center">Memuat data...</p> : (
           <div className="space-y-4">
-            {sasaranData.map(sasaran => (
-              <SasaranStrategiAccordion
-                key={sasaran.id}
-                sasaran={sasaran}
-                onDataChange={fetchSasaranDanStrategi} // Kirim fungsi refresh
-              />
-            ))}
+            {sasaranData.length > 0 ? (
+                sasaranData.map(sasaran => (
+                <SasaranStrategiAccordion
+                    key={sasaran.id}
+                    sasaran={sasaran}
+                    onDataChange={fetchSasaranDanStrategi}
+                />
+                ))
+            ) : (
+                <p className="text-center text-gray-500">Tidak ada data untuk ditampilkan.</p>
+            )}
           </div>
         )}
       </div>

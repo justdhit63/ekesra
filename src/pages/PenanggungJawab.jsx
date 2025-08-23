@@ -1,7 +1,7 @@
 // src/pages/PenanggungJawabPage.jsx
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import IndikatorPJAccordion from '../components/IndikatorPJAccordion'; // Komponen baru
+import IndikatorPJAccordion from '../components/IndikatorPJAccordion';
 
 function PenanggungJawabPage() {
   const [perangkatDaerahList, setPerangkatDaerahList] = useState([]);
@@ -9,8 +9,8 @@ function PenanggungJawabPage() {
   const [indicators, setIndicators] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // Mengambil daftar Perangkat Daerah
   useEffect(() => {
-    // Ambil daftar Perangkat Daerah
     const fetchPerangkatDaerah = async () => {
       const { data } = await supabase.from('perangkat_daerah').select('id, nama_daerah');
       if (data) {
@@ -21,37 +21,23 @@ function PenanggungJawabPage() {
     fetchPerangkatDaerah();
   }, []);
 
+  // Mengambil indikator berdasarkan Perangkat Daerah yang dipilih
   useEffect(() => {
     if (!selectedDaerahId) return;
 
-    // Ambil semua indikator yang terkait dengan Perangkat Daerah yang dipilih
     const fetchIndicators = async () => {
       setLoading(true);
+      
+      // Gunakan RPC Function untuk mengambil data secara efisien
+      const { data, error } = await supabase.rpc('get_indikator_sasaran_by_pd', {
+        pd_id: selectedDaerahId
+      });
 
-      // Pertama, dapatkan semua sasaran_id dari perangkat daerah yang dipilih
-      const { data: sasaran, error: sasaranError } = await supabase
-        .from('renstra_sasaran')
-        .select('id')
-        .eq('perangkat_daerah_id', selectedDaerahId);
-
-      if (sasaranError) {
-        console.error(sasaranError);
-        setLoading(false);
-        return;
-      }
-
-      const sasaranIds = sasaran.map(s => s.id);
-
-      // Kedua, dapatkan semua indikator berdasarkan sasaran_id
-      const { data: indicatorData, error: indicatorError } = await supabase
-        .from('renstra_indikator_sasaran')
-        .select('*')
-        .in('sasaran_id', sasaranIds);
-
-      if (indicatorData) {
-        setIndicators(indicatorData);
+      if (data) {
+        setIndicators(data);
       } else {
-        console.error(indicatorError);
+        setIndicators([]);
+        console.error("Gagal mengambil indikator:", error);
       }
       setLoading(false);
     };
@@ -65,7 +51,7 @@ function PenanggungJawabPage() {
 
       <div className="bg-white p-6 rounded-lg shadow-md">
         <div className="flex items-center justify-between mb-4">
-          <div className="rounded-lg shadow-md mb-6 w-1/2">
+          <div className="w-full md:w-1/3">
             <label className="block text-sm font-medium text-gray-700">Perangkat Daerah</label>
             <select
               value={selectedDaerahId}
@@ -77,20 +63,21 @@ function PenanggungJawabPage() {
               ))}
             </select>
           </div>
-          <h1 className='text-lg font-medium'>Data Penanggung Jawab</h1>
+          <h1 className='text-lg font-medium hidden md:block'>Data Penanggung Jawab</h1>
         </div>
-        {loading ? <p>Loading...</p> : (
+        
+        {loading ? <p className="text-center p-4">Memuat...</p> : (
           <div className="space-y-4">
-            {indicators.map(indicator => (
-              <IndikatorPJAccordion key={indicator.id} indicator={indicator} />
-            ))}
+            {indicators.length > 0 ? (
+              indicators.map(indicator => (
+                <IndikatorPJAccordion key={indicator.id} indicator={indicator} />
+              ))
+            ) : (
+              <p className="text-center text-gray-500 p-4">Tidak ada indikator untuk perangkat daerah ini.</p>
+            )}
           </div>
         )}
       </div>
-
-
-
-
     </div>
   );
 }

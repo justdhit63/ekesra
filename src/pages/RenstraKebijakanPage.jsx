@@ -20,35 +20,21 @@ function RenstraKebijakanPage() {
     fetchPerangkatDaerah();
   }, []);
 
+  // <-- DIUBAH: Menggunakan fungsi RPC yang baru -->
   const fetchStrategiDanKebijakan = async () => {
     if (!selectedDaerahId) return;
     setLoading(true);
 
-    // Langkah 1: Dapatkan semua sasaran_id dari perangkat daerah yang dipilih
-    const { data: sasarans } = await supabase
-      .from('renstra_sasaran')
-      .select('id')
-      .eq('perangkat_daerah_id', selectedDaerahId);
+    const { data, error } = await supabase.rpc('get_kebijakan_by_pd', {
+      pd_id: selectedDaerahId
+    });
 
-    if (!sasarans || sasarans.length === 0) {
+    if (data) {
+      setStrategiData(data);
+    } else {
       setStrategiData([]);
-      setLoading(false);
-      return;
+      console.error(error);
     }
-    const sasaranIds = sasarans.map(s => s.id);
-
-    // Langkah 2: Ambil semua strategi (dan kebijakan di dalamnya) berdasarkan sasaran_id
-    const { data, error } = await supabase
-      .from('renstra_strategi')
-      .select(`
-        id,
-        deskripsi_strategi,
-        renstra_kebijakan ( id, deskripsi_kebijakan )
-      `)
-      .in('sasaran_id', sasaranIds);
-
-    if (data) setStrategiData(data);
-    else console.error(error);
     setLoading(false);
   };
 
@@ -62,7 +48,7 @@ function RenstraKebijakanPage() {
 
       <div className="bg-white p-6 rounded-lg shadow-md mb-6">
         <div className="flex items-center justify-between">
-          <div className="mb-6 w-1/2">
+          <div className="mb-6 w-full md:w-1/2">
             <label className="block text-sm font-medium text-gray-700">Perangkat Daerah</label>
             <select
               value={selectedDaerahId}
@@ -74,18 +60,22 @@ function RenstraKebijakanPage() {
               ))}
             </select>
           </div>
-          <h2 className="text-lg font-medium">Renstra Kebijakan Periode 2025-2029</h2>
+          <h2 className="text-lg font-medium hidden md:block">Renstra Kebijakan Periode 2025-2029</h2>
         </div>
 
-        {loading ? <p>Loading...</p> : (
+        {loading ? <p className="text-center">Memuat data...</p> : (
           <div className="space-y-4">
-            {strategiData.map(strategi => (
-              <StrategiKebijakanAccordion
-                key={strategi.id}
-                strategi={strategi}
-                onDataChange={fetchStrategiDanKebijakan}
-              />
-            ))}
+            {strategiData.length > 0 ? (
+                strategiData.map(strategi => (
+                <StrategiKebijakanAccordion
+                    key={strategi.id}
+                    strategi={strategi}
+                    onDataChange={fetchStrategiDanKebijakan}
+                />
+                ))
+            ) : (
+                <p className="text-center text-gray-500">Tidak ada data untuk ditampilkan.</p>
+            )}
           </div>
         )}
       </div>

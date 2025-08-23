@@ -1,18 +1,18 @@
-// src/components/SasaranProgramAccordion.jsx
+// src/components/sasaranAccordion.jsx
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FaChevronDown, FaEdit, FaTrash } from 'react-icons/fa';
 import { supabase } from '../lib/supabaseClient';
 
-function SasaranProgramAccordion({ sasaranProgram, onDataChange }) {
+function SasaranProgramAccordion({ sasaran, onDataChange }) {
   const [isOpen, setIsOpen] = useState(true);
 
   const handleDelete = async () => {
-    if (window.confirm(`Yakin ingin menghapus: "${sasaranProgram.deskripsi_sasaran_program}"?`)) {
+    if (window.confirm(`Yakin ingin menghapus: "${sasaran.deskripsi_sasaran_program}"?`)) {
       const { error } = await supabase
         .from('renstra_sasaran_program')
         .delete()
-        .eq('id', sasaranProgram.id);
+        .eq('id', sasaran.id);
       
       if (error) {
         alert("Gagal menghapus: " + error.message);
@@ -26,9 +26,9 @@ function SasaranProgramAccordion({ sasaranProgram, onDataChange }) {
   return (
     <div className="bg-white rounded-sm shadow-md">
       <div className="w-full bg-green-600 text-white p-3 flex justify-between items-center rounded-t-sm">
-        <span className="font-semibold text-left">» {sasaranProgram.deskripsi_sasaran_program}</span>
+        <span className="font-semibold text-left">» {sasaran.deskripsi_sasaran_program}</span>
         <div className="flex items-center space-x-2">
-            <Link to={`/renstra/program/sasaran/edit/${sasaranProgram.id}`} className="bg-yellow-500 hover:bg-yellow-600 text-white p-2 rounded inline-flex items-center">
+            <Link to={`/renstra/program/sasaran/edit/${sasaran.id}`} className="bg-yellow-500 hover:bg-yellow-600 text-white p-2 rounded inline-flex items-center">
                 <FaEdit />
             </Link>
             <button onClick={handleDelete} className="bg-red-500 hover:bg-red-600 text-white p-2 rounded inline-flex items-center">
@@ -58,8 +58,8 @@ function SasaranProgramAccordion({ sasaranProgram, onDataChange }) {
                 </tr>
               </thead>
               <tbody>
-                {sasaranProgram.indikator && sasaranProgram.indikator.length > 0 ? (
-                    sasaranProgram.indikator.map(indikator => (
+                {sasaran.indikator && sasaran.indikator.length > 0 ? (
+                    sasaran.indikator.map(indikator => (
                     <tr key={indikator.id}>
                       <td className="py-2 px-3 border border-gray-200">{indikator.deskripsi_indikator}</td>
                       <td className="py-2 px-3 border border-gray-200">{indikator.satuan}</td>

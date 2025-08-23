@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { Link } from 'react-router-dom';
 import { FaPlus } from 'react-icons/fa';
-// 1. Impor komponen Accordion yang baru
 import SasaranProgramAccordion from '../components/SasaranProgramAccordion';
 
 function SasaranProgramPage() {
@@ -12,7 +11,6 @@ function SasaranProgramPage() {
   const [sasaranProgramData, setSasaranProgramData] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Fungsi fetchData tidak perlu diubah
   const fetchData = async () => {
     if (!selectedDaerahId) return;
     setLoading(true);
@@ -21,16 +19,15 @@ function SasaranProgramPage() {
       pd_id: selectedDaerahId
     });
 
-    // Supabase RPC bisa mengembalikan null jika tidak ada data, jadi kita beri array kosong
-    if (data) setSasaranProgramData(data);
-    else {
+    if (data) {
+        setSasaranProgramData(data);
+    } else {
       setSasaranProgramData([]);
       console.error(error);
     }
     setLoading(false);
   };
 
-  // useEffect untuk fetchPerangkatDaerah tidak perlu diubah
   useEffect(() => {
     const fetchPerangkatDaerah = async () => {
       const { data } = await supabase.from('perangkat_daerah').select('id, nama_daerah');
@@ -42,7 +39,6 @@ function SasaranProgramPage() {
     fetchPerangkatDaerah();
   }, []);
 
-  // useEffect untuk fetchData tidak perlu diubah
   useEffect(() => {
     fetchData();
   }, [selectedDaerahId]);
@@ -50,36 +46,40 @@ function SasaranProgramPage() {
   return (
     <div>
       <h1 className="text-xl font-bold text-gray-800 mb-4">Sasaran Program</h1>
-      <div className="bg-white p-4 rounded-lg shadow-md mb-6">
-        <div className="mb-4 flex justify-between items-center">
-          <select
-            value={selectedDaerahId}
-            onChange={(e) => setSelectedDaerahId(e.target.value)}
-            className="border p-2 rounded-md w-1/3"
-          >
-            {perangkatDaerahList.map(daerah => (
-              <option key={daerah.id} value={daerah.id}>{daerah.nama_daerah}</option>
-            ))}
-          </select>
-          <Link to="/renstra/program/sasaran/tambah" className="bg-green-600 text-white py-2 px-4 rounded inline-flex items-center">
+      <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <div className="w-full md:w-1/3">
+            <label className="block text-sm font-medium text-gray-700">Perangkat Daerah</label>
+            <select
+                value={selectedDaerahId}
+                onChange={(e) => setSelectedDaerahId(e.target.value)}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+            >
+                {perangkatDaerahList.map(daerah => (
+                <option key={daerah.id} value={daerah.id}>{daerah.nama_daerah}</option>
+                ))}
+            </select>
+          </div>
+          <Link to="/renstra/program/sasaran/tambah" className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
             <FaPlus className="mr-2" />
             Tambah
           </Link>
         </div>
 
-        <h2 className="text-gray-700 pb-5 border-b mb-2 border-gray-600">Sasaran Program & Indikator Program PD</h2>
+        <h2 className="text-gray-700 text-lg font-medium pb-2 border-b border-gray-300 mb-4">
+          Sasaran Program & Indikator Program PD
+        </h2>
 
-        {/* 2. Ganti placeholder dengan mapping komponen Accordion */}
         {loading ? (
-          <p className="text-center">Loading data...</p>
+          <p className="text-center">Memuat data...</p>
         ) : (
           <div className="space-y-4">
             {sasaranProgramData && sasaranProgramData.length > 0 ? (
               sasaranProgramData.map(item => (
                 <SasaranProgramAccordion
                   key={item.id}
-                  sasaranProgram={item}
-                  onDataChange={fetchData} // Kirim fungsi refresh
+                  sasaran={item} // Prop yang diharapkan oleh komponen anak adalah 'sasaran'
+                  onDataChange={fetchData}
                 />
               ))
             ) : (

@@ -6,26 +6,23 @@ import { supabase } from '../lib/supabaseClient';
 function TambahProgramPage() {
   // State untuk dropdown
   const [perangkatDaerahList, setPerangkatDaerahList] = useState([]);
+  const [tujuanList, setTujuanList] = useState([]);
   const [sasaranList, setSasaranList] = useState([]);
   
   // State untuk input form
   const [selectedDaerahId, setSelectedDaerahId] = useState('');
+  const [selectedTujuanId, setSelectedTujuanId] = useState('');
   const [selectedSasaranId, setSelectedSasaranId] = useState('');
   const [deskripsiProgram, setDeskripsiProgram] = useState('');
   const [sumberAnggaran, setSumberAnggaran] = useState('');
   const [anggaran, setAnggaran] = useState({
-    tahun1: 0,
-    tahun2: 0,
-    tahun3: 0,
-    tahun4: 0,
-    tahun5: 0,
-    renja: 0,
+    tahun1: 0, tahun2: 0, tahun3: 0, tahun4: 0, tahun5: 0, renja: 0,
   });
 
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
 
-  // Ambil daftar Perangkat Daerah
+  // 1. Ambil daftar Perangkat Daerah
   useEffect(() => {
     const fetchPerangkatDaerah = async () => {
       const { data } = await supabase.from('perangkat_daerah').select('*');
@@ -34,26 +31,39 @@ function TambahProgramPage() {
     fetchPerangkatDaerah();
   }, []);
 
-  // Ambil daftar Sasaran berdasarkan Perangkat Daerah yang dipilih
+  // 2. Ambil daftar Tujuan berdasarkan Perangkat Daerah
   useEffect(() => {
     if (!selectedDaerahId) {
-      setSasaranList([]);
-      setSelectedSasaranId('');
+      setTujuanList([]); setSelectedTujuanId('');
+      return;
+    }
+    const fetchTujuan = async () => {
+      const { data } = await supabase.from('renstra_tujuan').select('*').eq('perangkat_daerah_id', selectedDaerahId);
+      setTujuanList(data || []);
+      setSelectedTujuanId(''); // Reset pilihan
+    };
+    fetchTujuan();
+  }, [selectedDaerahId]);
+
+  // 3. Ambil daftar Sasaran berdasarkan Tujuan
+  useEffect(() => {
+    if (!selectedTujuanId) {
+      setSasaranList([]); setSelectedSasaranId('');
       return;
     }
     const fetchSasaran = async () => {
-      const { data } = await supabase.from('renstra_sasaran').select('*').eq('perangkat_daerah_id', selectedDaerahId);
-      if (data) setSasaranList(data);
+      const { data } = await supabase.from('renstra_sasaran').select('*').eq('tujuan_id', selectedTujuanId);
+      setSasaranList(data || []);
+      setSelectedSasaranId(''); // Reset pilihan
     };
     fetchSasaran();
-  }, [selectedDaerahId]);
+  }, [selectedTujuanId]);
 
   const handleAnggaranChange = (e) => {
     const { name, value } = e.target;
     setAnggaran(prev => ({ ...prev, [name]: value }));
   };
 
-  // Handler untuk submit form
   const handleSubmit = async (event) => {
     event.preventDefault();
     setSaving(true);
@@ -86,17 +96,24 @@ function TambahProgramPage() {
       <h1 className="text-xl font-bold text-gray-800 mb-4">Form Tambah Renstra Program</h1>
       
       <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700">Perangkat Daerah</label>
-            <select value={selectedDaerahId} onChange={(e) => setSelectedDaerahId(e.target.value)} required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3">
+            <select value={selectedDaerahId} onChange={(e) => setSelectedDaerahId(e.target.value)} required className="mt-1 block w-full border p-2 rounded-md">
               <option value="">Pilih PD</option>
               {perangkatDaerahList.map(pd => <option key={pd.id} value={pd.id}>{pd.nama_daerah}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Sasaran</label>
-            <select value={selectedSasaranId} onChange={(e) => setSelectedSasaranId(e.target.value)} required disabled={!selectedDaerahId} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3">
+            <label className="block text-sm font-medium text-gray-700">Renstra Tujuan</label>
+            <select value={selectedTujuanId} onChange={(e) => setSelectedTujuanId(e.target.value)} required disabled={!selectedDaerahId} className="mt-1 block w-full border p-2 rounded-md">
+              <option value="">Pilih Tujuan</option>
+              {tujuanList.map(t => <option key={t.id} value={t.id}>{t.deskripsi_tujuan}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Renstra Sasaran (Induk)</label>
+            <select value={selectedSasaranId} onChange={(e) => setSelectedSasaranId(e.target.value)} required disabled={!selectedTujuanId} className="mt-1 block w-full border p-2 rounded-md">
               <option value="">Pilih Sasaran</option>
               {sasaranList.map(s => <option key={s.id} value={s.id}>{s.deskripsi_sasaran}</option>)}
             </select>
@@ -105,12 +122,12 @@ function TambahProgramPage() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700">Program</label>
-          <textarea value={deskripsiProgram} onChange={(e) => setDeskripsiProgram(e.target.value)} rows="3" required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></textarea>
+          <textarea value={deskripsiProgram} onChange={(e) => setDeskripsiProgram(e.target.value)} rows="3" required className="mt-1 block w-full border p-2 rounded-md"></textarea>
         </div>
         
         <div>
             <label className="block text-sm font-medium text-gray-700">Sumber Anggaran</label>
-            <input type="text" value={sumberAnggaran} onChange={(e) => setSumberAnggaran(e.target.value)} placeholder="Contoh: APBD, DAK" required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+            <input type="text" value={sumberAnggaran} onChange={(e) => setSumberAnggaran(e.target.value)} placeholder="Contoh: APBD, DAK" required className="mt-1 block w-full border p-2 rounded-md"/>
         </div>
 
         <div className="border-t pt-6">
@@ -126,10 +143,8 @@ function TambahProgramPage() {
         </div>
 
         <div className="flex justify-end space-x-4">
-          <Link to="/renstra/program" className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded">
-            Cancel
-          </Link>
-          <button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:bg-blue-300">
+          <Link to="/renstra/program" className="bg-gray-200 py-2 px-4 rounded">Batal</Link>
+          <button type="submit" disabled={saving} className="bg-blue-600 text-white py-2 px-4 rounded disabled:bg-blue-300">
             {saving ? 'Menyimpan...' : 'Submit'}
           </button>
         </div>

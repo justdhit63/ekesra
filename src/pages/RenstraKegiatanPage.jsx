@@ -8,7 +8,7 @@ import ProgramKegiatanAccordion from '../components/ProgramKegiatanAccordion';
 function RenstraKegiatanPage() {
   const [perangkatDaerahList, setPerangkatDaerahList] = useState([]);
   const [selectedDaerahId, setSelectedDaerahId] = useState('');
-  const [programData, setProgramData] = useState([]);
+  const [kegiatanData, setKegiatanData] = useState([]); // Diubah untuk menampung program
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -22,23 +22,21 @@ function RenstraKegiatanPage() {
     fetchPerangkatDaerah();
   }, []);
 
+  // DIUBAH: Menggunakan fungsi RPC yang baru dan benar
   const fetchProgramDanKegiatan = async () => {
     if (!selectedDaerahId) return;
     setLoading(true);
 
-    const { data: sasarans } = await supabase.from('renstra_sasaran').select('id').eq('perangkat_daerah_id', selectedDaerahId);
+    // Panggil fungsi PostgreSQL yang mengambil program beserta kegiatannya
+    const { data, error } = await supabase.rpc('get_program_by_pd_with_kegiatan', {
+        pd_id: selectedDaerahId
+    });
 
-    if (sasarans && sasarans.length > 0) {
-      const sasaranIds = sasarans.map(s => s.id);
-      const { data, error } = await supabase
-        .from('renstra_program')
-        .select(`*, renstra_kegiatan(*)`)
-        .in('sasaran_id', sasaranIds);
-
-      if (data) setProgramData(data);
-      else console.error(error);
+    if (data) {
+      setKegiatanData(data);
     } else {
-      setProgramData([]);
+      setKegiatanData([]);
+      console.error(error);
     }
     setLoading(false);
   };
@@ -49,38 +47,36 @@ function RenstraKegiatanPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-800 mb-4">Renstra Kegiatan</h1>
-
-      <div className="bg-white p-4 rounded-lg shadow-md mb-6">
-        <div className="flex justify-between items-center mb-2">
-          <select
-            value={selectedDaerahId}
-            onChange={(e) => setSelectedDaerahId(e.target.value)}
-            className="mt-1 block w-full md:w-1/3 border p-2 rounded-md"
-          >
-            {perangkatDaerahList.map(daerah => (
-              <option key={daerah.id} value={daerah.id}>{daerah.nama_daerah}</option>
-            ))}
-          </select>
-          <Link to="/renstra/kegiatan/tambah" className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
-            <FaPlus className="mr-2" />
-            Tambah
-          </Link>
-        </div>
-        <h2 className="py-4 text-gray-700 mb-2 border-b border-gray-500">Renstra Kegiatan Periode 2025-2029</h2>
-        {loading ? <p>Loading...</p> : (
-          <div className="space-y-4">
-            {programData.map(program => (
-              <ProgramKegiatanAccordion
-                key={program.id}
-                program={program}
-                onDataChange={fetchProgramDanKegiatan}
-              />
-            ))}
-          </div>
-        )}
+      <h1 className="text-2xl font-bold text-gray-800 mb-4">Renstra Kegiatan</h1>
+      
+      <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex justify-between items-center">
+        <select 
+          value={selectedDaerahId}
+          onChange={(e) => setSelectedDaerahId(e.target.value)}
+          className="mt-1 block w-full md:w-1/3 border p-2 rounded-md"
+        >
+          {perangkatDaerahList.map(daerah => (
+            <option key={daerah.id} value={daerah.id}>{daerah.nama_daerah}</option>
+          ))}
+        </select>
+         <Link to="/renstra/kegiatan/tambah" className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
+          <FaPlus className="mr-2" />
+          Tambah
+        </Link>
       </div>
 
+      {loading ? <p className="text-center">Memuat...</p> : (
+        <div className="space-y-4">
+          {kegiatanData.map(program => (
+            // Menggunakan kembali komponen accordion dari halaman Program
+            <ProgramKegiatanAccordion 
+              key={program.id} 
+              program={program}
+              onDataChange={fetchProgramDanKegiatan}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

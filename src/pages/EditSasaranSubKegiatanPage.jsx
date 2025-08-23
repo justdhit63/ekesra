@@ -24,8 +24,10 @@ function EditSasaranSubKegiatanPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // State
+  const [perangkatDaerahList, setPerangkatDaerahList] = useState([]);
   const [subKegiatanList, setSubKegiatanList] = useState([]);
+  
+  const [selectedDaerahId, setSelectedDaerahId] = useState('');
   const [selectedSubKegiatanId, setSelectedSubKegiatanId] = useState('');
   const [deskripsiSasaranSubKegiatan, setDeskripsiSasaranSubKegiatan] = useState('');
   const [indicators, setIndicators] = useState([]);
@@ -34,10 +36,12 @@ function EditSasaranSubKegiatanPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      // Ambil data sasaran sub kegiatan yang akan diedit
+      const { data: pdData } = await supabase.from('perangkat_daerah').select('*');
+      if (pdData) setPerangkatDaerahList(pdData);
+
       const { data: sasaranData, error } = await supabase
         .from('renstra_sasaran_sub_kegiatan')
-        .select(`*, renstra_indikator_sub_kegiatan(*)`)
+        .select(`*, renstra_sub_kegiatan(*, renstra_kegiatan(*, renstra_program(*, renstra_sasaran(*, renstra_tujuan(*))))), renstra_indikator_sub_kegiatan(*)`)
         .eq('id', id)
         .single();
 
@@ -46,24 +50,36 @@ function EditSasaranSubKegiatanPage() {
         navigate('/renstra/sub-kegiatan/sasaran');
         return;
       }
+        
+      const pdId = sasaranData.renstra_sub_kegiatan.renstra_kegiatan.renstra_program.renstra_sasaran.renstra_tujuan.perangkat_daerah_id;
 
-      // Isi state form dengan data yang ada
+      setSelectedDaerahId(pdId);
       setSelectedSubKegiatanId(sasaranData.sub_kegiatan_id);
       setDeskripsiSasaranSubKegiatan(sasaranData.deskripsi_sasaran_sub_kegiatan);
       setIndicators(sasaranData.renstra_indikator_sub_kegiatan.length > 0 
         ? sasaranData.renstra_indikator_sub_kegiatan 
         : [{ ...initialIndicatorState }]);
       
-      const { data: subKegiatanDataList } = await supabase.from('renstra_sub_kegiatan').select('*');
+      const { data: subKegiatanDataList } = await supabase.rpc('get_sub_kegiatan_by_pd', { pd_id: pdId });
       if (subKegiatanDataList) setSubKegiatanList(subKegiatanDataList);
 
       setLoading(false);
     };
-
     fetchData();
   }, [id, navigate]);
 
-  // Handler untuk mengelola input indikator yang dinamis
+  useEffect(() => {
+    if (!selectedDaerahId || loading) return;
+    const fetchSubKegiatan = async () => {
+      const { data } = await supabase.rpc('get_sub_kegiatan_by_pd', { pd_id: selectedDaerahId });
+      setSubKegiatanList(data || []);
+      if (!data?.find(sk => sk.id === selectedSubKegiatanId)) {
+        setSelectedSubKegiatanId('');
+      }
+    };
+    fetchSubKegiatan();
+  }, [selectedDaerahId, loading]);
+
   const handleIndicatorChange = (index, event) => {
     const values = [...indicators];
     const { name, value, type, checked } = event.target;
@@ -82,29 +98,22 @@ function EditSasaranSubKegiatanPage() {
       setIndicators(values);
     }
   };
-  
+
   const handleUpdate = async (e) => {
     e.preventDefault();
     setSaving(true);
-
-    // Update data induk
     const { error: sasaranError } = await supabase
         .from('renstra_sasaran_sub_kegiatan')
         .update({ sub_kegiatan_id: selectedSubKegiatanId, deskripsi_sasaran_sub_kegiatan: deskripsiSasaranSubKegiatan })
         .eq('id', id);
-    
     if (sasaranError) {
         alert("Gagal memperbarui data: " + sasaranError.message);
         setSaving(false);
         return;
     }
-
-    // Hapus indikator lama dan masukkan ulang yang baru
     await supabase.from('renstra_indikator_sub_kegiatan').delete().eq('sasaran_sub_kegiatan_id', id);
-
     const indicatorsToInsert = indicators.map(({ id: indicatorId, ...rest }) => ({ ...rest, sasaran_sub_kegiatan_id: id }));
     const { error: indicatorError } = await supabase.from('renstra_indikator_sub_kegiatan').insert(indicatorsToInsert);
-
     if (indicatorError) {
         alert("Gagal memperbarui indikator: " + indicatorError.message);
     } else {
@@ -120,23 +129,31 @@ function EditSasaranSubKegiatanPage() {
     <div>
       <h1 className="text-xl font-bold text-gray-800 mb-4">Form Edit Sasaran Sub Kegiatan</h1>
       <form onSubmit={handleUpdate} className="bg-white p-6 rounded-lg shadow-md space-y-6">
-        <div>
-            <label className="block text-sm font-medium text-gray-700">Sub Kegiatan PD</label>
-            <select value={selectedSubKegiatanId} onChange={e => setSelectedSubKegiatanId(e.target.value)} required className="w-full border p-2 rounded mt-1">
-                <option value="">Pilih Sub Kegiatan</option>
-                {subKegiatanList.map(sk => <option key={sk.id} value={sk.id}>{sk.deskripsi_sub_kegiatan}</option>)}
-            </select>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Perangkat Daerah</label>
+                <select value={selectedDaerahId} onChange={e => setSelectedDaerahId(e.target.value)} required className="w-full border p-2 rounded mt-1">
+                    <option value="">Pilih PD</option>
+                    {perangkatDaerahList.map(pd => <option key={pd.id} value={pd.id}>{pd.nama_daerah}</option>)}
+                </select>
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Sub Kegiatan PD</label>
+                <select value={selectedSubKegiatanId} onChange={e => setSelectedSubKegiatanId(e.target.value)} required disabled={!selectedDaerahId} className="w-full border p-2 rounded mt-1">
+                    <option value="">Pilih Sub Kegiatan</option>
+                    {subKegiatanList.map(sk => <option key={sk.id} value={sk.id}>{sk.deskripsi_sub_kegiatan}</option>)}
+                </select>
+            </div>
         </div>
         <div>
             <label className="block text-sm font-medium text-gray-700">Sasaran Sub Kegiatan</label>
             <textarea value={deskripsiSasaranSubKegiatan} onChange={e => setDeskripsiSasaranSubKegiatan(e.target.value)} required className="w-full border p-2 rounded mt-1" rows="3"></textarea>
         </div>
         
-        {/* Form Indikator Dinamis */}
         <div className="space-y-4">
           <h3 className="text-lg font-medium text-gray-800">Indikator Sasaran Sub Kegiatan</h3>
           {indicators.map((indicator, index) => (
-            <div key={index} className="bg-gray-50 p-4 rounded-md border relative">
+            <div key={indicator.id || index} className="bg-gray-50 p-4 rounded-md border relative">
               <button type="button" onClick={() => handleRemoveIndicator(index)} className="absolute top-2 right-2 text-red-500 hover:text-red-700">
                 <FaTrash />
               </button>
@@ -182,5 +199,4 @@ function EditSasaranSubKegiatanPage() {
     </div>
   );
 }
-
 export default EditSasaranSubKegiatanPage;

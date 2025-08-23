@@ -29,10 +29,11 @@ function RenstraSubKegiatanPage() {
       pd_id: selectedDaerahId
     });
 
-    if (data) setKegiatanData(data);
-    else {
-      setKegiatanData([]);
-      console.error(error);
+    if (data) {
+      setKegiatanData(data);
+    } else {
+      setKegiatanData([]); // Pastikan state direset jika ada error
+      console.error("Gagal mengambil data Sub Kegiatan:", error);
     }
     setLoading(false);
   };
@@ -44,35 +45,41 @@ function RenstraSubKegiatanPage() {
   return (
     <div>
       <h1 className="text-xl font-bold text-gray-800 mb-4">Sub Kegiatan Renstra</h1>
-      <div className="bg-white p-4 rounded-lg shadow-md  mb-4">
-
-        <div className="mb-4 flex justify-between items-center">
-          <select
-            value={selectedDaerahId}
-            onChange={(e) => setSelectedDaerahId(e.target.value)}
-            className="mt-1 block w-full md:w-1/3 border p-2 rounded-md"
-          >
-            {perangkatDaerahList.map(daerah => (
-              <option key={daerah.id} value={daerah.id}>{daerah.nama_daerah}</option>
-            ))}
-          </select>
+      <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <div className="w-full md:w-1/3">
+            <label className="block text-sm font-medium text-gray-700">Perangkat Daerah</label>
+            <select
+              value={selectedDaerahId}
+              onChange={(e) => setSelectedDaerahId(e.target.value)}
+              className="mt-1 block w-full border p-2 rounded-md"
+            >
+              {perangkatDaerahList.map(daerah => (
+                <option key={daerah.id} value={daerah.id}>{daerah.nama_daerah}</option>
+              ))}
+            </select>
+          </div>
           <Link to="/renstra/sub-kegiatan/tambah" className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
             <FaPlus className="mr-2" />
             Tambah
           </Link>
         </div>
 
-        <h2 className="py-4 mb-2 border-b border-gray-500 text-gray-700">Renstra Sub Kegiatan Periode 2025-2029</h2>
+        <h2 className="text-gray-700 text-lg font-medium pb-2 border-b border-gray-300 mb-4">Renstra Sub Kegiatan Periode 2025-2029</h2>
 
-        {loading ? <p>Loading...</p> : (
+        {loading ? <p className="text-center py-4">Memuat data...</p> : (
           <div className="space-y-4">
-            {kegiatanData.map(kegiatan => (
-              <KegiatanSubKegiatanAccordion
-                key={kegiatan.id}
-                kegiatan={kegiatan}
-                onDataChange={fetchKegiatanDanSub}
-              />
-            ))}
+            {kegiatanData && kegiatanData.length > 0 ? (
+              kegiatanData.map(kegiatan => (
+                <KegiatanSubKegiatanAccordion
+                  key={kegiatan.id}
+                  kegiatan={kegiatan}
+                  onDataChange={fetchKegiatanDanSub}
+                />
+              ))
+            ) : (
+              <p className="text-center text-gray-500 py-4">Belum ada data kegiatan untuk ditampilkan.</p>
+            )}
           </div>
         )}
       </div>

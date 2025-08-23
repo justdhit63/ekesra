@@ -21,7 +21,7 @@ function SasaranStrategiAccordion({ sasaran, onDataChange }) {
     } else {
       setNewStrategi('');
       setIsAdding(false);
-      onDataChange(); // Refresh data di halaman induk
+      onDataChange();
     }
   };
 
@@ -37,7 +37,7 @@ function SasaranStrategiAccordion({ sasaran, onDataChange }) {
     <div className="bg-white rounded-lg shadow-md">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full bg-green-600 text-white p-3 flex justify-between items-center rounded-t-lg"
+        className="w-full bg-blue-600 text-white p-3 flex justify-between items-center rounded-t-lg"
       >
         <span className="font-semibold text-left">» Sasaran Perangkat Daerah: {sasaran.deskripsi_sasaran}</span>
         <FaChevronDown className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
@@ -48,14 +48,21 @@ function SasaranStrategiAccordion({ sasaran, onDataChange }) {
           <div className="rounded-lg shadow-md border border-gray-200 p-4 mb-2">
             <h3 className="font-semibold text-gray-700 mb-2">Strategi PD</h3>
             <div className="space-y-2">
-              {sasaran.renstra_strategi.map(strategi => (
-                <div key={strategi.id} className="flex justify-between items-center bg-gray-50 border border-gray-200 shadow-md p-2 rounded">
-                  <p className="text-sm">{strategi.deskripsi_strategi}</p>
-                  <button onClick={() => handleDeleteStrategi(strategi.id)} className="text-red-500 hover:text-red-700">
-                    <FaTrash />
-                  </button>
-                </div>
-              ))}
+              
+              {/* --- PERBAIKAN DI SINI --- */}
+              {/* Tambahkan pengecekan apakah sasaran.renstra_strategi ada dan merupakan array */}
+              {sasaran.renstra_strategi && sasaran.renstra_strategi.length > 0 ? (
+                sasaran.renstra_strategi.map(strategi => (
+                  <div key={strategi.id} className="flex justify-between items-center bg-gray-50 border border-gray-200 shadow-md p-2 rounded">
+                    <p className="text-sm">{strategi.deskripsi_strategi}</p>
+                    <button onClick={() => handleDeleteStrategi(strategi.id)} className="text-red-500 hover:text-red-700">
+                      <FaTrash />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500 text-center">Belum ada strategi untuk sasaran ini.</p>
+              )}
             </div>
           </div>
 

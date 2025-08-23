@@ -25,17 +25,17 @@ function RenstraProgramPage() {
   const fetchSasaranDanProgram = async () => {
     if (!selectedDaerahId) return;
     setLoading(true);
-    const { data, error } = await supabase
-      .from('renstra_sasaran')
-      .select(`
-        id,
-        deskripsi_sasaran,
-        renstra_program ( * )
-      `)
-      .eq('perangkat_daerah_id', selectedDaerahId);
+    // Memanggil fungsi database yang benar
+    const { data, error } = await supabase.rpc('get_program_by_pd', {
+      pd_id: selectedDaerahId
+    });
 
-    if (data) setSasaranData(data);
-    else console.error(error);
+    if (data) {
+      setSasaranData(data);
+    } else {
+      setSasaranData([]);
+      console.error("Gagal mengambil data Renstra Program:", error);
+    }
     setLoading(false);
   };
 
@@ -49,6 +49,7 @@ function RenstraProgramPage() {
 
       <div className="bg-white p-6 rounded-lg shadow-md mb-6">
         <div className="flex justify-between items-center mb-6">
+          {/* Dropdown Perangkat Daerah */}
           <select
             value={selectedDaerahId}
             onChange={(e) => setSelectedDaerahId(e.target.value)}
@@ -63,23 +64,24 @@ function RenstraProgramPage() {
             Tambah
           </Link>
         </div>
-
-        <h2 className="text-gray-700 pb-5 border-b mb-2 border-gray-600">Renstra Program Periode 2025-2029</h2>
-
-        {loading ? <p>Loading...</p> : (
+        <h2 className="text-gray-700 pb-5 border-b mb-4 border-gray-600">Renstra Program Periode 2025-2029</h2>
+        {loading ? <p className="text-center">Memuat...</p> : (
           <div className="space-y-4">
-            {sasaranData.map(sasaran => (
-              <RenstraSasaranProgramAccordion
-                key={sasaran.id}
-                sasaran={sasaran}
-                onDataChange={fetchSasaranDanProgram}
-              />
-            ))}
+            {sasaranData && sasaranData.length > 0 ? (
+                sasaranData.map(sasaran => (
+                <RenstraSasaranProgramAccordion
+                    key={sasaran.id}
+                    sasaran={sasaran} // Nama prop yang benar adalah 'sasaran'
+                    onDataChange={fetchSasaranDanProgram}
+                />
+                ))
+            ) : (
+                <p className="text-center text-gray-500">Tidak ada data untuk ditampilkan.</p>
+            )}
           </div>
         )}
       </div>
     </div>
   );
 }
-
 export default RenstraProgramPage;

@@ -24,50 +24,53 @@ function PJProgramPage() {
     if (!selectedDaerahId) return;
     const fetchIndicators = async () => {
       setLoading(true);
-      // Panggil fungsi PostgreSQL untuk mengambil data secara efisien
       const { data, error } = await supabase.rpc('get_indikator_program_by_pd', {
         pd_id: selectedDaerahId
       });
 
-      if (data) setIndicators(data);
-      else {
+      if (data) {
+        setIndicators(data);
+      } else {
         setIndicators([]);
         console.error(error);
       }
       setLoading(false);
     };
+
     fetchIndicators();
   }, [selectedDaerahId]);
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-800 mb-4">Penanggung Jawab Sasaran Program</h1>
-      <div className="bg-white p-6 shadow-md rounded-lg">
-        <div className="flex justify-between items-center">
-          <div className="w-1/3 mb-6">
-            <label className="block text-sm font-medium text-gray-700">Perangkat Daerah</label>
-            <select
-              value={selectedDaerahId}
-              onChange={(e) => setSelectedDaerahId(e.target.value)}
-              className="mt-1 block w-full border p-2 rounded-md"
-            >
-              {perangkatDaerahList.map(daerah => (
-                <option key={daerah.id} value={daerah.id}>{daerah.nama_daerah}</option>
-              ))}
-            </select>
-          </div>
-          <h2 className="text-gray-700 font-medium">Data Penanggung Jawab</h2>
-        </div>
-
-        {loading ? <p>Loading...</p> : (
-          <div className="space-y-4">
-            {indicators.map(indicator => (
-              <IndikatorPJProgramAccordion key={indicator.id} indicator={indicator} />
+      <h1 className="text-xl font-bold text-gray-800 mb-4">Penanggung Jawab Program</h1>
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="w-full md:w-1/3 mb-4">
+          <label className="block text-sm font-medium text-gray-700">Perangkat Daerah</label>
+          <select
+            value={selectedDaerahId}
+            onChange={(e) => setSelectedDaerahId(e.target.value)}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+          >
+            {perangkatDaerahList.map(daerah => (
+              <option key={daerah.id} value={daerah.id}>{daerah.nama_daerah}</option>
             ))}
+          </select>
+        </div>
+        
+        {loading ? <p className="text-center p-4">Memuat...</p> : (
+          <div className="space-y-4">
+            {indicators.length > 0 ? (
+              indicators.map(indicator => (
+                <IndikatorPJProgramAccordion key={indicator.id} indicator={indicator} />
+              ))
+            ) : (
+              <p className="text-center text-gray-500 p-4">Tidak ada indikator untuk perangkat daerah ini.</p>
+            )}
           </div>
         )}
       </div>
     </div>
   );
 }
+
 export default PJProgramPage;

@@ -2,42 +2,48 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { FaPlus } from 'react-icons/fa';
-import SasaranCard from '../components/SasaranCard';
 import { Link } from 'react-router-dom';
+import TujuanCard from '../components/TujuanCard'; // Ganti nama komponen
 
 function RenstraTujuanPage() {
   const [perangkatDaerahList, setPerangkatDaerahList] = useState([]);
   const [selectedDaerahId, setSelectedDaerahId] = useState('');
-  const [renstraData, setRenstraData] = useState([]);
+  const [data, setData] = useState([]); // Ganti nama state
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchPerangkatDaerah = async () => {
-      const { data } = await supabase.from('perangkat_daerah').select('id, nama_daerah');
-      if (data) {
-        setPerangkatDaerahList(data);
-        if (data.length > 0) {
-          setSelectedDaerahId(data[0].id);
+      const { data: pdData } = await supabase.from('perangkat_daerah').select('id, nama_daerah');
+      if (pdData) {
+        setPerangkatDaerahList(pdData);
+        if (pdData.length > 0) {
+          setSelectedDaerahId(pdData[0].id);
         }
       }
     };
     fetchPerangkatDaerah();
   }, []);
 
-  // <-- DIUBAH: Logika fetch data dijadikan fungsi terpisah
-  const fetchRenstraData = async () => {
+  const fetchData = async () => {
     if (!selectedDaerahId) return;
     setLoading(true);
-    const { data, error } = await supabase
-      .from('renstra_sasaran')
+    // Query baru untuk mengambil data sesuai hierarki
+    const { data: rpdData, error } = await supabase
+      .from('sasaran_rpd')
       .select(`
-        id, deskripsi_sasaran, periode_awal, periode_akhir,
-        renstra_tujuan (id, deskripsi_tujuan, renstra_indikator (*))
+        deskripsi,
+        renstra_tujuan (
+          *,
+          renstra_sasaran (
+            *,
+            renstra_indikator_sasaran(*)
+          )
+        )
       `)
-      .eq('perangkat_daerah_id', selectedDaerahId);
+      .eq('renstra_tujuan.perangkat_daerah_id', selectedDaerahId);
 
-    if (data) {
-      setRenstraData(data);
+    if (rpdData) {
+      setData(rpdData);
     } else {
       console.error(error);
     }
@@ -45,22 +51,21 @@ function RenstraTujuanPage() {
   };
 
   useEffect(() => {
-    fetchRenstraData(); // <-- DIUBAH: Memanggil fungsi fetch
+    fetchData();
   }, [selectedDaerahId]);
 
   return (
     <div>
       <h1 className="text-xl font-bold text-gray-800 mb-4">Renstra Tujuan</h1>
 
-      <div className="bg-white p-4 rounded-lg shadow-md mb-6 ">
+      <div className="bg-white p-4 rounded-lg shadow-md mb-6">
         <div className="flex justify-between items-center">
           <div>
-            <label htmlFor="perangkat-daerah" className="block text-sm font-medium text-gray-700 mb-1">Perangkat Daerah</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Perangkat Daerah</label>
             <select
-              id="perangkat-daerah"
               value={selectedDaerahId}
               onChange={(e) => setSelectedDaerahId(e.target.value)}
-              className="border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="border p-2 rounded-md"
             >
               {perangkatDaerahList.map(daerah => (
                 <option key={daerah.id} value={daerah.id}>{daerah.nama_daerah}</option>
@@ -72,24 +77,24 @@ function RenstraTujuanPage() {
             Tambah Tujuan
           </Link>
         </div>
-
-        <h1 className='text-gray-600 p-6 border-b border-gray-400 mb-4'>Renstra Tujuan Periode Tahun 2025- 2029</h1>
-
-        {loading ? (
-          <p>Loading...</p>
-        ) : (
-          <div className="space-y-6">
-            {renstraData.map(sasaran => (
-              // <-- DIUBAH: Mengirim fungsi fetchRenstraData sebagai prop
-              <SasaranCard
-                key={sasaran.id}
-                sasaran={sasaran}
-                onDataChange={fetchRenstraData}
-              />
-            ))}
-          </div>
-        )}
       </div>
+      
+      {loading ? <p className="text-center">Memuat data...</p> : (
+        <div className="space-y-6">
+          {data.map((sasaranRpd, index) => (
+            <div key={index}>
+              <h2 className="text-lg font-semibold mb-2">Acuan Sasaran RPD: <span className="font-normal">{sasaranRpd.deskripsi}</span></h2>
+              {sasaranRpd.renstra_tujuan.map(tujuan => (
+                <TujuanCard 
+                  key={tujuan.id}
+                  tujuan={tujuan}
+                  onDataChange={fetchData}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

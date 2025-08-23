@@ -47,6 +47,15 @@ import PKTahunanProgramPage from './pages/PKTahunanProgramPage';
 import PKTahunanKegiatanPage from './pages/PKTahunanKegiatanPage';
 import LaporanRenstraPage from './pages/LaporanRenstraPage';
 import PohonKinerjaPage from './pages/PohonKinerjaPage';
+import TujuanRpdPage from './pages/TujuanRpdPage';
+import TambahTujuanRpdPage from './pages/TambahTujuanRpdPage';
+import EditTujuanRpdPage from './pages/EditTujuanRpdPage';
+import SasaranRpdPage from './pages/SasaranRpdPage';
+import TambahSasaranRpdPage from './pages/TambahSasaranRpdPage';
+import EditSasaranRpdPage from './pages/EditSasaranRpdPage';
+import TambahIndikatorTujuanRpdPage from './pages/TambahIndikatorTujuanRpdPage';
+import TambahIndikatorSasaranRpdPage from './pages/TambahIndikatorSasaranPage';
+import TambahPerangkatDaerahPage from './pages/TambahPerangkatDaerahPage';
 
 // Buat halaman placeholder untuk contoh
 const LaporanPage = () => <div><h1>Halaman Laporan</h1></div>;
@@ -107,6 +116,16 @@ function App() {
           <ProtectedRoute session={session}>
             <Layout>
               <DetailPerencanaan session={session} />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tambah-perangkat-daerah"
+        element={
+          <ProtectedRoute session={session}>
+            <Layout>
+              <TambahPerangkatDaerahPage session={session} />
             </Layout>
           </ProtectedRoute>
         }
@@ -466,6 +485,32 @@ function App() {
           </ProtectedRoute>
         }
       />
+      {/* Rute untuk Tujuan RPD */}
+      <Route path="/rpd/tujuan" element={<ProtectedRoute session={session}><Layout><TujuanRpdPage /></Layout></ProtectedRoute>} />
+      <Route path="/rpd/tujuan/tambah" element={<ProtectedRoute session={session}><Layout><TambahTujuanRpdPage /></Layout></ProtectedRoute>} />
+      <Route path="/rpd/tujuan/edit/:id" element={<ProtectedRoute session={session}><Layout><EditTujuanRpdPage /></Layout></ProtectedRoute>} />
+      <Route
+        path="/rpd/tujuan/:tujuanId/tambah-indikator"
+        element={
+          <ProtectedRoute session={session}>
+            <Layout><TambahIndikatorTujuanRpdPage /></Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Rute untuk Sasaran RPD */}
+      <Route path="/rpd/sasaran" element={<ProtectedRoute session={session}><Layout><SasaranRpdPage /></Layout></ProtectedRoute>} />
+      <Route path="/rpd/sasaran/tambah" element={<ProtectedRoute session={session}><Layout><TambahSasaranRpdPage /></Layout></ProtectedRoute>} />
+      <Route path="/rpd/sasaran/edit/:id" element={<ProtectedRoute session={session}><Layout><EditSasaranRpdPage /></Layout></ProtectedRoute>} />
+      <Route
+        path="/rpd/sasaran/:sasaranId/tambah-indikator"
+        element={
+          <ProtectedRoute session={session}>
+            <Layout><TambahIndikatorSasaranRpdPage /></Layout>
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/pengaturan/profil"
         element={

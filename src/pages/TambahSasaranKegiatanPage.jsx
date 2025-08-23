@@ -47,6 +47,7 @@ function TambahSasaranKegiatanPage() {
         return;
     };
     const fetchKegiatan = async () => {
+        // Memanggil fungsi RPC yang sudah diperbaiki
         const { data } = await supabase.rpc('get_kegiatan_by_pd', { pd_id: selectedDaerahId });
         if(data) setKegiatanList(data);
         else setKegiatanList([]);
@@ -165,12 +166,11 @@ function TambahSasaranKegiatanPage() {
         </div>
 
         <div className="flex justify-end space-x-4">
-            <Link to="/renstra/kegiatan/sasaran" className="bg-gray-200 py-2 px-4 rounded">Cancel</Link>
+            <Link to="/renstra/kegiatan/sasaran" className="bg-gray-200 py-2 px-4 rounded">Batal</Link>
             <button type="submit" disabled={saving} className="bg-blue-600 text-white py-2 px-4 rounded">{saving ? 'Menyimpan...' : 'Submit'}</button>
         </div>
       </form>
     </div>
   );
 }
-
 export default TambahSasaranKegiatanPage;

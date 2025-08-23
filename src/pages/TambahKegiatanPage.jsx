@@ -4,23 +4,20 @@ import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 
 function TambahKegiatanPage() {
-  // State untuk dropdown
   const [perangkatDaerahList, setPerangkatDaerahList] = useState([]);
   const [programList, setProgramList] = useState([]);
 
-  // State untuk input form
   const [selectedDaerahId, setSelectedDaerahId] = useState('');
   const [selectedProgramId, setSelectedProgramId] = useState('');
   const [deskripsiKegiatan, setDeskripsiKegiatan] = useState('');
   const [sumberAnggaran, setSumberAnggaran] = useState('');
   const [anggaran, setAnggaran] = useState({
-    tahun1: 0, tahun2: 0, tahun3: 0, tahun4: 0, tahun5: 0
+    tahun1: '', tahun2: '', tahun3: '', tahun4: '', tahun5: ''
   });
 
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
 
-  // Ambil daftar Perangkat Daerah
   useEffect(() => {
     const fetchPerangkatDaerah = async () => {
       const { data } = await supabase.from('perangkat_daerah').select('*');
@@ -29,7 +26,6 @@ function TambahKegiatanPage() {
     fetchPerangkatDaerah();
   }, []);
 
-  // Ambil daftar Program berdasarkan Perangkat Daerah
   useEffect(() => {
     if (!selectedDaerahId) {
       setProgramList([]);
@@ -37,14 +33,9 @@ function TambahKegiatanPage() {
       return;
     }
     const fetchPrograms = async () => {
-      const { data: sasarans } = await supabase.from('renstra_sasaran').select('id').eq('perangkat_daerah_id', selectedDaerahId);
-      if (sasarans && sasarans.length > 0) {
-        const sasaranIds = sasarans.map(s => s.id);
-        const { data: programs } = await supabase.from('renstra_program').select('*').in('sasaran_id', sasaranIds);
-        if (programs) setProgramList(programs);
-      } else {
-        setProgramList([]);
-      }
+      const { data } = await supabase.rpc('get_program_by_pd_simple', { pd_id: selectedDaerahId });
+      if (data) setProgramList(data);
+      else setProgramList([]);
     };
     fetchPrograms();
   }, [selectedDaerahId]);
@@ -54,7 +45,6 @@ function TambahKegiatanPage() {
     setAnggaran(prev => ({ ...prev, [name]: value }));
   };
 
-  // Handler untuk submit form
   const handleSubmit = async (event) => {
     event.preventDefault();
     setSaving(true);
@@ -126,7 +116,7 @@ function TambahKegiatanPage() {
 
         <div className="flex justify-end space-x-4">
           <Link to="/renstra/kegiatan" className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded">
-            Cancel
+            Batal
           </Link>
           <button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:bg-blue-300">
             {saving ? 'Menyimpan...' : 'Submit'}

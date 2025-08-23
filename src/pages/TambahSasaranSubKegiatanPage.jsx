@@ -40,6 +40,7 @@ function TambahSasaranSubKegiatanPage() {
     fetchPerangkatDaerah();
   }, []);
 
+  // DIUBAH: Menggunakan fungsi RPC untuk mengambil sub kegiatan
   useEffect(() => {
     if (!selectedDaerahId) {
         setSubKegiatanList([]);
@@ -47,12 +48,9 @@ function TambahSasaranSubKegiatanPage() {
         return;
     };
     const fetchSubKegiatan = async () => {
-        const { data, error } = await supabase.rpc('get_sub_kegiatan_by_pd', { pd_id: selectedDaerahId });
+        const { data } = await supabase.rpc('get_sub_kegiatan_by_pd', { pd_id: selectedDaerahId });
         if(data) setSubKegiatanList(data);
-        else {
-            setSubKegiatanList([]);
-            console.error(error);
-        }
+        else setSubKegiatanList([]);
     };
     fetchSubKegiatan();
   }, [selectedDaerahId]);
@@ -175,5 +173,4 @@ function TambahSasaranSubKegiatanPage() {
     </div>
   );
 }
-
 export default TambahSasaranSubKegiatanPage;

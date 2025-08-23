@@ -8,10 +8,10 @@ import SasaranAccordion from '../components/SasaranAccordion';
 function RenstraSasaranPage() {
   const [perangkatDaerahList, setPerangkatDaerahList] = useState([]);
   const [selectedDaerahId, setSelectedDaerahId] = useState('');
-  const [sasaranData, setSasaranData] = useState([]);
+  const [dataTujuan, setDataTujuan] = useState([]); // State untuk menampung data tujuan
   const [loading, setLoading] = useState(false);
 
-  // Ambil daftar Perangkat Daerah untuk dropdown
+  // Mengambil daftar Perangkat Daerah
   useEffect(() => {
     const fetchPerangkatDaerah = async () => {
       const { data } = await supabase.from('perangkat_daerah').select('id, nama_daerah');
@@ -25,78 +25,86 @@ function RenstraSasaranPage() {
     fetchPerangkatDaerah();
   }, []);
 
-  // <-- PERUBAHAN 1: Logika fetch diubah menjadi fungsi mandiri
-  // Fungsi ini bisa dipanggil kapan saja untuk memuat ulang data sasaran
-  const fetchSasaranData = async () => {
+  // DIUBAH: Mengambil data mulai dari Renstra Tujuan
+  const fetchData = async () => {
     if (!selectedDaerahId) return;
-
     setLoading(true);
+    
+    // Query baru: Ambil semua 'tujuan' dari PD yang dipilih,
+    // lalu sertakan semua 'sasaran' di bawah setiap tujuan tersebut.
     const { data, error } = await supabase
-      .from('renstra_sasaran')
+      .from('renstra_tujuan')
       .select(`
         id,
-        deskripsi_sasaran,
-        renstra_indikator_sasaran (*)
+        deskripsi_tujuan,
+        renstra_sasaran (
+          *,
+          renstra_indikator_sasaran (*)
+        )
       `)
       .eq('perangkat_daerah_id', selectedDaerahId);
-
+      
     if (data) {
-      setSasaranData(data);
+      setDataTujuan(data);
     } else {
+      setDataTujuan([]);
       console.error(error);
     }
     setLoading(false);
   };
 
-  // Ambil data Sasaran saat dropdown berubah
   useEffect(() => {
-    fetchSasaranData(); // <-- PERUBAHAN 2: Panggil fungsi fetch
+    fetchData();
   }, [selectedDaerahId]);
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-800 mb-4">Renstra Sasaran</h1>
+      <h1 className="text-2xl font-bold text-gray-800 mb-4">Renstra Sasaran</h1>
 
-      {/* Header dengan Dropdown dan Tombol Tambah */}
-      <div className="bg-white p-4 rounded-lg shadow-md">
-        <div className="flex justify-between items-center">
-          <select
-            value={selectedDaerahId}
-            onChange={(e) => setSelectedDaerahId(e.target.value)}
-            className="border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none"
-          >
-            {perangkatDaerahList.map(daerah => (
-              <option key={daerah.id} value={daerah.id}>{daerah.nama_daerah}</option>
-            ))}
-          </select>
-          <Link
-            to="/renstra/sasaran/tambah"
-            className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-flex items-center"
-          >
-            <FaPlus className="mr-2" />
-            Tambah
-          </Link>
-        </div>
-
-        <h1 className='text-gray-600 p-6 border-b border-gray-400 mb-4'>Renstra Sasaran Periode Tahun 2025- 2029</h1>
-
-        {/* Konten Utama: Daftar Sasaran */}
-        {loading ? (
-          <p>Loading...</p>
-        ) : (
-          <div className="space-y-4">
-            {sasaranData.map(sasaran => (
-              <SasaranAccordion
-                key={sasaran.id}
-                sasaran={sasaran}
-                onDataChange={fetchSasaranData} // <-- PERUBAHAN 3: Kirim fungsi sebagai prop
-              />
-            ))}
-          </div>
-        )}
+      <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex justify-between items-center">
+        <select 
+          value={selectedDaerahId}
+          onChange={(e) => setSelectedDaerahId(e.target.value)}
+          className="border p-2 rounded-md"
+        >
+          {perangkatDaerahList.map(daerah => (
+            <option key={daerah.id} value={daerah.id}>{daerah.nama_daerah}</option>
+          ))}
+        </select>
+        <Link 
+          to="/renstra/sasaran/tambah"
+          className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-flex items-center"
+        >
+          <FaPlus className="mr-2" />
+          Tambah
+        </Link>
       </div>
 
-
+      {/* DIUBAH: Tampilan data disesuaikan dengan hierarki baru */}
+      {loading ? (
+        <p className="text-center">Memuat data...</p>
+      ) : (
+        <div className="space-y-6">
+          {dataTujuan.map(tujuan => (
+            <div key={tujuan.id}>
+              <h2 className="text-lg font-semibold text-gray-700 mb-2">
+                Tujuan: <span className="font-normal">{tujuan.deskripsi_tujuan}</span>
+              </h2>
+              {tujuan.renstra_sasaran.length > 0 ? (
+                tujuan.renstra_sasaran.map(sasaran => (
+                  <SasaranAccordion 
+                    key={sasaran.id} 
+                    sasaran={sasaran}
+                    onDataChange={fetchData}
+                  />
+                ))
+              ) : (
+                <p className="text-sm text-gray-500 ml-4">- Belum ada sasaran untuk tujuan ini.</p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

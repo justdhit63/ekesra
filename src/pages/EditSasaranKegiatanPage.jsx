@@ -24,8 +24,9 @@ function EditSasaranKegiatanPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // State
+  const [perangkatDaerahList, setPerangkatDaerahList] = useState([]);
   const [kegiatanList, setKegiatanList] = useState([]);
+  const [selectedDaerahId, setSelectedDaerahId] = useState('');
   const [selectedKegiatanId, setSelectedKegiatanId] = useState('');
   const [deskripsiSasaranKegiatan, setDeskripsiSasaranKegiatan] = useState('');
   const [indicators, setIndicators] = useState([]);
@@ -34,35 +35,49 @@ function EditSasaranKegiatanPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      // 1. Ambil data spesifik yang akan diedit
+      const { data: pdData } = await supabase.from('perangkat_daerah').select('*');
+      if (pdData) setPerangkatDaerahList(pdData);
+
       const { data: sasaranData, error } = await supabase
         .from('renstra_sasaran_kegiatan')
-        .select(`*, renstra_indikator_kegiatan(*)`)
+        .select(`*, renstra_kegiatan(*, renstra_program(*, renstra_sasaran(*, renstra_tujuan(*)))), renstra_indikator_kegiatan(*)`)
         .eq('id', id)
         .single();
 
       if (error) {
-        alert("Gagal mengambil data sasaran kegiatan!");
+        alert("Gagal mengambil data!");
         navigate('/renstra/kegiatan/sasaran');
         return;
       }
+        
+      const pdId = sasaranData.renstra_kegiatan.renstra_program.renstra_sasaran.renstra_tujuan.perangkat_daerah_id;
 
-      // 2. Isi state form dengan data yang ada
+      setSelectedDaerahId(pdId);
       setSelectedKegiatanId(sasaranData.kegiatan_id);
       setDeskripsiSasaranKegiatan(sasaranData.deskripsi_sasaran_kegiatan);
       setIndicators(sasaranData.renstra_indikator_kegiatan.length > 0 
         ? sasaranData.renstra_indikator_kegiatan 
         : [{ ...initialIndicatorState }]);
-
-      // 3. Ambil daftar kegiatan untuk dropdown
-      const { data: kegiatanDataList } = await supabase.from('renstra_kegiatan').select('*');
+      
+      const { data: kegiatanDataList } = await supabase.rpc('get_kegiatan_by_pd', { pd_id: pdId });
       if (kegiatanDataList) setKegiatanList(kegiatanDataList);
 
       setLoading(false);
     };
-
     fetchData();
   }, [id, navigate]);
+
+  useEffect(() => {
+    if (!selectedDaerahId || loading) return;
+    const fetchKegiatan = async () => {
+      const { data } = await supabase.rpc('get_kegiatan_by_pd', { pd_id: selectedDaerahId });
+      setKegiatanList(data || []);
+      if (!data?.find(k => k.id === selectedKegiatanId)) {
+        setSelectedKegiatanId('');
+      }
+    };
+    fetchKegiatan();
+  }, [selectedDaerahId, loading]);
 
   const handleIndicatorChange = (index, event) => {
     const values = [...indicators];
@@ -86,25 +101,18 @@ function EditSasaranKegiatanPage() {
   const handleUpdate = async (e) => {
     e.preventDefault();
     setSaving(true);
-
-    // Update data induk
     const { error: sasaranError } = await supabase
         .from('renstra_sasaran_kegiatan')
         .update({ kegiatan_id: selectedKegiatanId, deskripsi_sasaran_kegiatan: deskripsiSasaranKegiatan })
         .eq('id', id);
-    
     if (sasaranError) {
         alert("Gagal memperbarui data: " + sasaranError.message);
         setSaving(false);
         return;
     }
-
-    // Hapus indikator lama dan masukkan ulang yang baru
     await supabase.from('renstra_indikator_kegiatan').delete().eq('sasaran_kegiatan_id', id);
-
     const indicatorsToInsert = indicators.map(({ id: indicatorId, ...rest }) => ({ ...rest, sasaran_kegiatan_id: id }));
     const { error: indicatorError } = await supabase.from('renstra_indikator_kegiatan').insert(indicatorsToInsert);
-
     if (indicatorError) {
         alert("Gagal memperbarui indikator: " + indicatorError.message);
     } else {
@@ -120,12 +128,21 @@ function EditSasaranKegiatanPage() {
     <div>
       <h1 className="text-xl font-bold text-gray-800 mb-4">Form Edit Sasaran Kegiatan</h1>
       <form onSubmit={handleUpdate} className="bg-white p-6 rounded-lg shadow-md space-y-6">
-        <div>
-            <label className="block text-sm font-medium text-gray-700">Kegiatan PD</label>
-            <select value={selectedKegiatanId} onChange={e => setSelectedKegiatanId(e.target.value)} required className="w-full border p-2 rounded mt-1">
-                <option value="">Pilih Kegiatan</option>
-                {kegiatanList.map(keg => <option key={keg.id} value={keg.id}>{keg.deskripsi_kegiatan}</option>)}
-            </select>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Perangkat Daerah</label>
+                <select value={selectedDaerahId} onChange={e => setSelectedDaerahId(e.target.value)} required className="w-full border p-2 rounded mt-1">
+                    <option value="">Pilih PD</option>
+                    {perangkatDaerahList.map(pd => <option key={pd.id} value={pd.id}>{pd.nama_daerah}</option>)}
+                </select>
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Kegiatan PD</label>
+                <select value={selectedKegiatanId} onChange={e => setSelectedKegiatanId(e.target.value)} required disabled={!selectedDaerahId} className="w-full border p-2 rounded mt-1">
+                    <option value="">Pilih Kegiatan</option>
+                    {kegiatanList.map(keg => <option key={keg.id} value={keg.id}>{keg.deskripsi_kegiatan}</option>)}
+                </select>
+            </div>
         </div>
         <div>
             <label className="block text-sm font-medium text-gray-700">Sasaran Kegiatan</label>
@@ -135,11 +152,10 @@ function EditSasaranKegiatanPage() {
         <div className="space-y-4">
           <h3 className="text-lg font-medium text-gray-800">Indikator Sasaran Kegiatan</h3>
           {indicators.map((indicator, index) => (
-            <div key={index} className="bg-gray-50 p-4 rounded-md border relative">
+            <div key={indicator.id || index} className="bg-gray-50 p-4 rounded-md border relative">
               <button type="button" onClick={() => handleRemoveIndicator(index)} className="absolute top-2 right-2 text-red-500 hover:text-red-700">
                 <FaTrash />
               </button>
-              {/* Salin JSX untuk input indikator dari TambahSasaranKegiatanPage.jsx ke sini */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                 <input type="text" name="deskripsi_indikator" placeholder="Indikator sasaran *" value={indicator.deskripsi_indikator || ''} onChange={e => handleIndicatorChange(index, e)} required className="border p-2 rounded-md" />
                 <div className="grid grid-cols-2 gap-4">

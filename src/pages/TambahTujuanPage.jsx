@@ -18,38 +18,31 @@ const initialIndicatorState = {
 
 function TambahTujuanPage() {
   const [perangkatDaerahList, setPerangkatDaerahList] = useState([]);
-  const [sasaranList, setSasaranList] = useState([]);
+  const [sasaranRpdList, setSasaranRpdList] = useState([]);
   
   const [selectedDaerahId, setSelectedDaerahId] = useState('');
-  const [selectedSasaranId, setSelectedSasaranId] = useState('');
+  const [selectedSasaranRpdId, setSelectedSasaranRpdId] = useState('');
   const [deskripsiTujuan, setDeskripsiTujuan] = useState('');
-  const [indicators, setIndicators] = useState([initialIndicatorState]);
+  const [indicators, setIndicators] = useState([{...initialIndicatorState}]); // Gunakan spread operator
   
-  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false); // Diubah dari loading ke saving
   const navigate = useNavigate();
 
-  // Fetch Perangkat Daerah saat komponen dimuat
+  // Fetch Perangkat Daerah dan Sasaran RPD
   useEffect(() => {
     const fetchPerangkatDaerah = async () => {
       const { data } = await supabase.from('perangkat_daerah').select('*');
       if (data) setPerangkatDaerahList(data);
     };
-    fetchPerangkatDaerah();
-  }, []);
-
-  // Fetch Sasaran setiap kali Perangkat Daerah berubah
-  useEffect(() => {
-    if (!selectedDaerahId) {
-      setSasaranList([]);
-      setSelectedSasaranId('');
-      return;
-    }
-    const fetchSasaran = async () => {
-      const { data } = await supabase.from('renstra_sasaran').select('*').eq('perangkat_daerah_id', selectedDaerahId);
-      if (data) setSasaranList(data);
+    
+    const fetchSasaranRpd = async () => {
+      const { data } = await supabase.from('sasaran_rpd').select('*');
+      if (data) setSasaranRpdList(data);
     };
-    fetchSasaran();
-  }, [selectedDaerahId]);
+
+    fetchPerangkatDaerah();
+    fetchSasaranRpd();
+  }, []);
 
   // Handler untuk input indikator dinamis
   const handleIndicatorChange = (index, event) => {
@@ -59,25 +52,28 @@ function TambahTujuanPage() {
   };
 
   const handleAddIndicator = () => {
-    setIndicators([...indicators, initialIndicatorState]);
+    setIndicators([...indicators, { ...initialIndicatorState }]); // Gunakan spread operator
   };
 
   const handleRemoveIndicator = (index) => {
-    const values = [...indicators];
-    values.splice(index, 1);
-    setIndicators(values);
+    if (indicators.length > 1) { // Menjaga agar minimal ada satu baris
+        const values = [...indicators];
+        values.splice(index, 1);
+        setIndicators(values);
+    }
   };
   
   // Handler untuk submit form
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setLoading(true);
+    setSaving(true);
 
     // 1. Insert data ke tabel renstra_tujuan
     const { data: tujuanData, error: tujuanError } = await supabase
       .from('renstra_tujuan')
       .insert({
-        sasaran_id: selectedSasaranId,
+        sasaran_rpd_id: selectedSasaranRpdId,
+        perangkat_daerah_id: selectedDaerahId,
         deskripsi_tujuan: deskripsiTujuan,
       })
       .select()
@@ -85,7 +81,7 @@ function TambahTujuanPage() {
 
     if (tujuanError) {
       alert('Gagal menyimpan tujuan: ' + tujuanError.message);
-      setLoading(false);
+      setSaving(false);
       return;
     }
 
@@ -104,39 +100,37 @@ function TambahTujuanPage() {
       alert('Gagal menyimpan indikator: ' + indicatorError.message);
     } else {
       alert('Data Renstra Tujuan berhasil disimpan!');
-      navigate('/renstra/tujuan'); // Kembali ke halaman utama Renstra
+      navigate('/renstra/tujuan');
     }
-    setLoading(false);
+    setSaving(false);
   };
-
 
   return (
     <div>
       <h1 className="text-xl font-bold text-gray-800 mb-4">Form Tambah Renstra Tujuan</h1>
       
       <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md space-y-6">
-        {/* Dropdown Perangkat Daerah & Sasaran */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700">Perangkat Daerah</label>
-            <select value={selectedDaerahId} onChange={(e) => setSelectedDaerahId(e.target.value)} required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3">
+            <select value={selectedDaerahId} onChange={(e) => setSelectedDaerahId(e.target.value)} required className="mt-1 block w-full border p-2 rounded-md">
               <option value="">Pilih PD</option>
               {perangkatDaerahList.map(pd => <option key={pd.id} value={pd.id}>{pd.nama_daerah}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Sasaran Kota</label>
-            <select value={selectedSasaranId} onChange={(e) => setSelectedSasaranId(e.target.value)} required disabled={!selectedDaerahId} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3">
-              <option value="">Pilih Sasaran</option>
-              {sasaranList.map(s => <option key={s.id} value={s.id}>{s.deskripsi_sasaran}</option>)}
+            <label className="block text-sm font-medium text-gray-700">Sasaran RPD (Acuan)</label>
+            {/* --- PERBAIKAN DI SINI --- */}
+            <select value={selectedSasaranRpdId} onChange={(e) => setSelectedSasaranRpdId(e.target.value)} required className="mt-1 block w-full border p-2 rounded-md">
+              <option value="">Pilih Sasaran RPD</option>
+              {sasaranRpdList.map(s => <option key={s.id} value={s.id}>{s.deskripsi}</option>)}
             </select>
           </div>
         </div>
 
-        {/* Text Area Tujuan */}
         <div>
           <label className="block text-sm font-medium text-gray-700">Tujuan</label>
-          <textarea value={deskripsiTujuan} onChange={(e) => setDeskripsiTujuan(e.target.value)} rows="3" required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></textarea>
+          <textarea value={deskripsiTujuan} onChange={(e) => setDeskripsiTujuan(e.target.value)} rows="3" required className="mt-1 block w-full border p-2 rounded-md"></textarea>
         </div>
 
         {/* Indikator Dinamis */}
@@ -144,22 +138,21 @@ function TambahTujuanPage() {
           <h3 className="text-lg font-medium text-gray-800">Indikator Tujuan</h3>
           {indicators.map((indicator, index) => (
             <div key={index} className="bg-gray-50 p-4 rounded-md border relative">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <input type="text" name="deskripsi_indikator" placeholder="Indikator Tujuan *" value={indicator.deskripsi_indikator} onChange={e => handleIndicatorChange(index, e)} required className="col-span-3 border border-gray-300 rounded-md p-2 bg-white shadow-md" />
-
-                <input type="text" name="satuan" placeholder="Satuan *" value={indicator.satuan} onChange={e => handleIndicatorChange(index, e)} required className="border border-gray-300 bg-white shadow-md rounded-md p-2" />
-
-                <input type="text" name="kondisi_awal" placeholder="Kondisi Awal *" value={indicator.kondisi_awal} onChange={e => handleIndicatorChange(index, e)} required className="border border-gray-300 bg-white shadow-md rounded-md p-2" />
-
-                <input type="text" name="target_tahun_1" placeholder="Target 2025 *" value={indicator.target_tahun_1} onChange={e => handleIndicatorChange(index, e)} required className="border border-gray-300 bg-white shadow-md rounded-md p-2" />
-
-                 {/* Tambahkan input target tahun lainnya sesuai kebutuhan */}
-                 <input type="text" name="kondisi_akhir" placeholder="Kondisi Akhir *" value={indicator.kondisi_akhir} onChange={e => handleIndicatorChange(index, e)} required className="border border-gray-300 bg-white shadow-md rounded-md p-2" />
-
-              </div>
               <button type="button" onClick={() => handleRemoveIndicator(index)} className="absolute top-2 right-2 text-red-500 hover:text-red-700">
                 <FaTrash />
               </button>
+              {/* Salin JSX dari form Tambah Sasaran Kegiatan untuk layout yang lebih baik */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <input type="text" name="deskripsi_indikator" placeholder="Indikator Tujuan *" value={indicator.deskripsi_indikator} onChange={e => handleIndicatorChange(index, e)} required className="col-span-full border bg-white p-2 rounded-md" />
+                  <input type="text" name="satuan" placeholder="Satuan *" value={indicator.satuan} onChange={e => handleIndicatorChange(index, e)} required className="border bg-white p-2 rounded-md" />
+                  <input type="text" name="kondisi_awal" placeholder="Kondisi Awal *" value={indicator.kondisi_awal} onChange={e => handleIndicatorChange(index, e)} required className="border bg-white p-2 rounded-md" />
+                  <input type="text" name="target_tahun_1" placeholder="Target 2025 *" value={indicator.target_tahun_1} onChange={e => handleIndicatorChange(index, e)} required className="border bg-white p-2 rounded-md" />
+                  <input type="text" name="target_tahun_2" placeholder="Target 2026 *" value={indicator.target_tahun_2} onChange={e => handleIndicatorChange(index, e)} required className="border bg-white p-2 rounded-md" />
+                  <input type="text" name="target_tahun_3" placeholder="Target 2027 *" value={indicator.target_tahun_3} onChange={e => handleIndicatorChange(index, e)} required className="border bg-white p-2 rounded-md" />
+                  <input type="text" name="target_tahun_4" placeholder="Target 2028 *" value={indicator.target_tahun_4} onChange={e => handleIndicatorChange(index, e)} required className="border bg-white p-2 rounded-md" />
+                  <input type="text" name="target_tahun_5" placeholder="Target 2029 *" value={indicator.target_tahun_5} onChange={e => handleIndicatorChange(index, e)} required className="border bg-white p-2 rounded-md" />
+                  <input type="text" name="kondisi_akhir" placeholder="Kondisi Akhir *" value={indicator.kondisi_akhir} onChange={e => handleIndicatorChange(index, e)} required className="border bg-white p-2 rounded-md" />
+              </div>
             </div>
           ))}
           <button type="button" onClick={handleAddIndicator} className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded inline-flex items-center">
@@ -168,13 +161,12 @@ function TambahTujuanPage() {
           </button>
         </div>
 
-        {/* Tombol Aksi */}
         <div className="flex justify-end space-x-4">
           <Link to="/renstra/tujuan" className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded">
-            Cancel
+            Batal
           </Link>
-          <button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:bg-blue-300">
-            {loading ? 'Menyimpan...' : 'Submit'}
+          <button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:bg-blue-300">
+            {saving ? 'Menyimpan...' : 'Submit'}
           </button>
         </div>
       </form>

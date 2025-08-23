@@ -8,7 +8,9 @@ function EditKegiatanPage() {
   const navigate = useNavigate();
 
   // State
+  const [perangkatDaerahList, setPerangkatDaerahList] = useState([]);
   const [programList, setProgramList] = useState([]);
+  const [selectedDaerahId, setSelectedDaerahId] = useState('');
   const [selectedProgramId, setSelectedProgramId] = useState('');
   const [deskripsiKegiatan, setDeskripsiKegiatan] = useState('');
   const [sumberAnggaran, setSumberAnggaran] = useState('');
@@ -18,38 +20,59 @@ function EditKegiatanPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      // Ambil data kegiatan yang akan diedit
       const { data: kegiatanData, error } = await supabase
         .from('renstra_kegiatan')
-        .select('*')
+        .select(`*, renstra_program(*, renstra_sasaran(*, renstra_tujuan(*)))`)
         .eq('id', id)
         .single();
-
+      
       if (error) {
         alert("Gagal mengambil data kegiatan!");
         navigate('/renstra/kegiatan');
-      } else {
-        // Isi state form dengan data yang ada
-        setSelectedProgramId(kegiatanData.program_id);
-        setDeskripsiKegiatan(kegiatanData.deskripsi_kegiatan);
-        setSumberAnggaran(kegiatanData.sumber_anggaran);
-        setAnggaran({
+        return;
+      }
+      
+      const pdId = kegiatanData.renstra_program.renstra_sasaran.renstra_tujuan.perangkat_daerah_id;
+
+      // Isi state form
+      setDeskripsiKegiatan(kegiatanData.deskripsi_kegiatan);
+      setSumberAnggaran(kegiatanData.sumber_anggaran);
+      setAnggaran({
           tahun1: kegiatanData.anggaran_tahun_1,
           tahun2: kegiatanData.anggaran_tahun_2,
           tahun3: kegiatanData.anggaran_tahun_3,
           tahun4: kegiatanData.anggaran_tahun_4,
           tahun5: kegiatanData.anggaran_tahun_5,
-        });
-      }
+      });
+      setSelectedProgramId(kegiatanData.program_id);
       
-      const { data: programDataList } = await supabase.from('renstra_program').select('*');
+      // Ambil daftar PD dan Program untuk dropdown
+      const { data: pdData } = await supabase.from('perangkat_daerah').select('*');
+      if (pdData) setPerangkatDaerahList(pdData);
+      
+      const { data: programDataList } = await supabase.rpc('get_program_by_pd_simple', { pd_id: pdId });
       if (programDataList) setProgramList(programDataList);
 
+      // Set state dropdown setelah semua list diambil
+      setSelectedDaerahId(pdId);
+      
       setLoading(false);
     };
-
     fetchData();
   }, [id, navigate]);
+
+  // useEffect untuk filter dropdown Program saat PD berubah
+  useEffect(() => {
+    if (!selectedDaerahId || loading) return;
+    const fetchPrograms = async () => {
+      const { data } = await supabase.rpc('get_program_by_pd_simple', { pd_id: selectedDaerahId });
+      setProgramList(data || []);
+      if (!data?.find(p => p.id === selectedProgramId)) {
+        setSelectedProgramId('');
+      }
+    };
+    fetchPrograms();
+  }, [selectedDaerahId, loading]);
 
   const handleAnggaranChange = (e) => {
     const { name, value } = e.target;
@@ -59,7 +82,6 @@ function EditKegiatanPage() {
   const handleUpdate = async (event) => {
     event.preventDefault();
     setSaving(true);
-
     const { error } = await supabase
       .from('renstra_kegiatan')
       .update({
@@ -73,7 +95,6 @@ function EditKegiatanPage() {
         anggaran_tahun_5: anggaran.tahun5,
       })
       .eq('id', id);
-
     if (error) {
       alert('Gagal memperbarui kegiatan: ' + error.message);
     } else {
@@ -90,12 +111,21 @@ function EditKegiatanPage() {
       <h1 className="text-xl font-bold text-gray-800 mb-4">Form Edit Renstra Kegiatan</h1>
       
       <form onSubmit={handleUpdate} className="bg-white p-6 rounded-lg shadow-md space-y-6">
-        <div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Perangkat Daerah</label>
+            <select value={selectedDaerahId} onChange={(e) => setSelectedDaerahId(e.target.value)} required className="mt-1 block w-full border p-2 rounded-md">
+              <option value="">Pilih PD</option>
+              {perangkatDaerahList.map(pd => <option key={pd.id} value={pd.id}>{pd.nama_daerah}</option>)}
+            </select>
+          </div>
+          <div>
             <label className="block text-sm font-medium text-gray-700">Program</label>
-            <select value={selectedProgramId} onChange={(e) => setSelectedProgramId(e.target.value)} required className="mt-1 block w-full border p-2 rounded-md">
+            <select value={selectedProgramId} onChange={(e) => setSelectedProgramId(e.target.value)} required disabled={!selectedDaerahId} className="mt-1 block w-full border p-2 rounded-md">
               <option value="">Pilih Program</option>
               {programList.map(p => <option key={p.id} value={p.id}>{p.deskripsi_program}</option>)}
             </select>
+          </div>
         </div>
 
         <div>
@@ -121,10 +151,10 @@ function EditKegiatanPage() {
 
         <div className="flex justify-end space-x-4">
           <Link to="/renstra/kegiatan" className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded">
-            Cancel
+            Batal
           </Link>
           <button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:bg-blue-300">
-            {saving ? 'Menyimpan...' : 'Update'}
+            {saving ? 'Memperbarui...' : 'Update'}
           </button>
         </div>
       </form>

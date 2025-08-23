@@ -11,21 +11,6 @@ function SasaranSubKegiatanPage() {
   const [sasaranSubKegiatanData, setSasaranSubKegiatanData] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchData = async () => {
-    if (!selectedDaerahId) return;
-    setLoading(true);
-    const { data, error } = await supabase.rpc('get_sasaran_sub_kegiatan_by_pd', {
-      pd_id: selectedDaerahId
-    });
-
-    if (data) setSasaranSubKegiatanData(data);
-    else {
-      setSasaranSubKegiatanData([]);
-      console.error(error);
-    }
-    setLoading(false);
-  };
-
   useEffect(() => {
     const fetchPerangkatDaerah = async () => {
       const { data } = await supabase.from('perangkat_daerah').select('id, nama_daerah');
@@ -37,6 +22,22 @@ function SasaranSubKegiatanPage() {
     fetchPerangkatDaerah();
   }, []);
 
+  const fetchData = async () => {
+    if (!selectedDaerahId) return;
+    setLoading(true);
+    const { data, error } = await supabase.rpc('get_sasaran_sub_kegiatan_by_pd', {
+      pd_id: selectedDaerahId
+    });
+
+    if (data) {
+      setSasaranSubKegiatanData(data);
+    } else {
+      setSasaranSubKegiatanData([]);
+      console.error("Gagal mengambil data Sasaran Sub Kegiatan:", error);
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
     fetchData();
   }, [selectedDaerahId]);
@@ -44,26 +45,31 @@ function SasaranSubKegiatanPage() {
   return (
     <div>
       <h1 className="text-xl font-bold text-gray-800 mb-4">Sasaran Sub Kegiatan</h1>
-      <div className="bg-white p-4 rounded-lg shadow-md mb-6">
-        <div className="mb-4 flex justify-between items-center">
-          <select
-            value={selectedDaerahId}
-            onChange={(e) => setSelectedDaerahId(e.target.value)}
-            className="border p-2 rounded-md"
-          >
-            {perangkatDaerahList.map(daerah => (
-              <option key={daerah.id} value={daerah.id}>{daerah.nama_daerah}</option>
-            ))}
-          </select>
-          <Link to="/renstra/sub-kegiatan/sasaran/tambah" className="bg-green-600 text-white py-2 px-4 rounded inline-flex items-center">
+      <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <div className="w-full md:w-1/3">
+            <label className="block text-sm font-medium text-gray-700">Perangkat Daerah</label>
+            <select
+              value={selectedDaerahId}
+              onChange={(e) => setSelectedDaerahId(e.target.value)}
+              className="mt-1 block w-full border p-2 rounded-md"
+            >
+              {perangkatDaerahList.map(daerah => (
+                <option key={daerah.id} value={daerah.id}>{daerah.nama_daerah}</option>
+              ))}
+            </select>
+          </div>
+          <Link to="/renstra/sub-kegiatan/sasaran/tambah" className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
             <FaPlus className="mr-2" />
             Tambah
           </Link>
         </div>
 
-        <h2 className="py-4 mb-2 border-b border-gray-500 text-gray-700">Sasaran Sub Kegiatan dan Indikator Sub Kegiatan</h2>
+        <h2 className="text-gray-700 text-lg font-medium pb-2 border-b border-gray-300 mb-4">
+          Sasaran Sub Kegiatan dan Indikator
+        </h2>
 
-        {loading ? <p className="text-center">Loading...</p> : (
+        {loading ? <p className="text-center py-4">Memuat data...</p> : (
           <div className="space-y-4">
             {sasaranSubKegiatanData && sasaranSubKegiatanData.length > 0 ? (
               sasaranSubKegiatanData.map(item => (
@@ -74,7 +80,7 @@ function SasaranSubKegiatanPage() {
                 />
               ))
             ) : (
-              <p className="text-center text-gray-500">Belum ada data sasaran sub kegiatan.</p>
+              <p className="text-center text-gray-500 py-4">Belum ada data sasaran sub kegiatan untuk ditampilkan.</p>
             )}
           </div>
         )}

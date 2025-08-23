@@ -36,7 +36,7 @@ function StrategiKebijakanAccordion({ strategi, onDataChange }) {
     <div className="bg-white rounded-lg shadow-md">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full bg-green-600 text-white p-3 flex justify-between items-center rounded-t-lg"
+        className="w-full bg-blue-600 text-white p-3 flex justify-between items-center rounded-t-lg"
       >
         <span className="font-semibold text-left">» Strategi PD: {strategi.deskripsi_strategi}</span>
         <FaChevronDown className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
@@ -47,14 +47,20 @@ function StrategiKebijakanAccordion({ strategi, onDataChange }) {
           <div className="bg-white border border-gray-200 p-4 rounded-lg shadow-md">
             <h3 className="font-semibold text-gray-700 mb-2">Kebijakan PD</h3>
             <div className="space-y-2">
-              {strategi.renstra_kebijakan.map(kebijakan => (
-                <div key={kebijakan.id} className="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200 shadow-md">
-                  <p className="text-sm">{kebijakan.deskripsi_kebijakan}</p>
-                  <button onClick={() => handleDeleteKebijakan(kebijakan.id)} className="text-red-500 hover:text-red-700">
-                    <FaTrash />
-                  </button>
-                </div>
-              ))}
+              
+              {/* --- PERBAIKAN DI SINI --- */}
+              {strategi.renstra_kebijakan && strategi.renstra_kebijakan.length > 0 ? (
+                strategi.renstra_kebijakan.map(kebijakan => (
+                  <div key={kebijakan.id} className="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200 shadow-md">
+                    <p className="text-sm">{kebijakan.deskripsi_kebijakan}</p>
+                    <button onClick={() => handleDeleteKebijakan(kebijakan.id)} className="text-red-500 hover:text-red-700">
+                      <FaTrash />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-center text-gray-500">Belum ada kebijakan untuk strategi ini.</p>
+              )}
             </div>
           </div>
 

@@ -8,6 +8,15 @@ function KegiatanPKAccordion({ kegiatan, onDataChange }) {
   const [modalState, setModalState] = useState({ isOpen: false, indicator: null, year: null });
   const years = [2025, 2026, 2027, 2028, 2029];
 
+  const handleOpenModal = (indicator, year) => {
+    setModalState({ isOpen: true, indicator, year });
+  };
+
+  const handleCloseModal = () => {
+    setModalState({ isOpen: false, indicator: null, year: null });
+    onDataChange(); // Refresh data setelah modal ditutup
+  };
+
   return (
     <>
       <div className="bg-white rounded-sm shadow-md">
@@ -22,36 +31,59 @@ function KegiatanPKAccordion({ kegiatan, onDataChange }) {
                 <h4 className="font-bold text-gray-700">{sasaranKeg.deskripsi_sasaran_kegiatan}</h4>
                 <div className="overflow-x-auto mt-2">
                   <table className="min-w-full bg-white border text-sm">
-                    {/* Header Tabel */}
                     <thead>
-                      <tr>
-                        <th className="py-2 px-3 border border-gray-300 border-b border-b-black text-left">Indikator</th>
-                        <th className="py-2 px-3 border border-gray-300 border-b border-b-black text-left">Satuan</th>
-                        {years.map(year => <th key={year} className="py-2 px-3 border border-gray-300 border-b border-b-black text-left">Target PK {year}</th>)}
+                      <tr className="bg-gray-50">
+                        <th className="py-2 px-3 border border-gray-300 border-b border-b-black text-left font-semibold text-gray-600">Indikator</th>
+                        <th className="py-2 px-3 border border-gray-300 border-b border-b-black text-left font-semibold text-gray-600">Satuan</th>
+                        {years.map(year => (
+                          <th key={year} className="py-2 px-3 border border-gray-300 border-b border-b-black text-center font-semibold text-gray-600">Target PK {year}</th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {sasaranKeg.indikator.map(indicator => {
-                        const pjByYear = new Map();
-                        indicator.pk_tahunan?.forEach(pj => {
-                          if (!pjByYear.has(pj.tahun)) pjByYear.set(pj.tahun, []);
-                          pjByYear.get(pj.tahun).push({ name: pj.full_name, target: pj.target_pk });
-                        });
-                        return (
-                          <tr key={indicator.id}>
-                            <td className="p-2 border border-gray-300">{indicator.deskripsi_indikator}</td>
-                            <td className="p-2 border border-gray-300">{indicator.satuan}</td>
-                            {years.map(year => (
-                              <td key={year} className="p-2 border border-gray-300 align-top">
-                                {/* Tampilan Target & Tombol Kelola */}
-                                <button onClick={() => setModalState({ isOpen: true, indicator: indicator, year: year })} className="text-blue-500 mt-2 text-xs">
-                                  <FaEdit size={10} className="mr-1"/> Kelola
-                                </button>
-                              </td>
-                            ))}
-                          </tr>
-                        )
-                      })}
+                      {sasaranKeg.indikator.length > 0 ? (
+                        sasaranKeg.indikator.map(indicator => {
+                          const targetsByYear = new Map();
+                          indicator.pk_tahunan?.forEach(target => {
+                            if (!targetsByYear.has(target.tahun)) targetsByYear.set(target.tahun, []);
+                            targetsByYear.get(target.tahun).push({ name: target.full_name, target: target.target_pk });
+                          });
+
+                          return (
+                            <tr key={indicator.id} className="hover:bg-gray-50">
+                              <td className="py-2 px-3 border border-gray-300">{indicator.deskripsi_indikator}</td>
+                              <td className="py-2 px-3 border border-gray-300">{indicator.satuan}</td>
+                              {years.map(year => (
+                                <td key={year} className="py-2 px-3 border border-gray-300 align-top">
+                                  {targetsByYear.has(year) && targetsByYear.get(year).length > 0 ? (
+                                    <ul className="list-disc list-inside space-y-1">
+                                      {targetsByYear.get(year).map((target, i) =>
+                                        <li key={i} className="text-xs">
+                                          {target.name}: <span className="font-semibold">{target.target}</span>
+                                        </li>
+                                      )}
+                                    </ul>
+                                  ) : (
+                                    <span className="text-gray-400 text-xs">- Belum ada -</span>
+                                  )}
+                                  <button
+                                    onClick={() => handleOpenModal(indicator, year)}
+                                    className="text-blue-500 hover:text-blue-700 mt-2 text-xs inline-flex items-center font-semibold"
+                                  >
+                                    <FaEdit size={10} className="mr-1"/> Kelola
+                                  </button>
+                                </td>
+                              ))}
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr>
+                          <td colSpan={2 + years.length} className="py-3 px-3 text-center text-gray-500">
+                            Belum ada indikator untuk sasaran kegiatan ini.
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -63,13 +95,10 @@ function KegiatanPKAccordion({ kegiatan, onDataChange }) {
       {modalState.isOpen && (
         <KelolaPKKegiatanModal
           isOpen={modalState.isOpen}
-          onClose={() => setModalState({ isOpen: false, indicator: null, year: null })}
+          onClose={handleCloseModal}
           indicator={modalState.indicator}
           year={modalState.year}
-          onSave={() => {
-            onDataChange();
-            setModalState({ isOpen: false, indicator: null, year: null });
-          }}
+          onSave={handleCloseModal} // Panggil handleCloseModal untuk refresh data
         />
       )}
     </>

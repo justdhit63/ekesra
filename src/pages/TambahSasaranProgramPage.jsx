@@ -8,7 +8,7 @@ const initialIndicatorState = {
   deskripsi_indikator: '',
   satuan: '',
   pk: false,
-  ir: false,
+  ir: false, // Sesuaikan dengan nama kolom di database Anda (iku atau ir)
   cara_pengukuran: '',
   kondisi_awal: '',
   target_tahun_1: '',
@@ -40,7 +40,7 @@ function TambahSasaranProgramPage() {
     fetchPerangkatDaerah();
   }, []);
 
-  // Ambil daftar Program berdasarkan Perangkat Daerah yang dipilih
+  // Ambil daftar Program berdasarkan Perangkat Daerah
   useEffect(() => {
     if (!selectedDaerahId) {
         setProgramList([]);
@@ -48,19 +48,13 @@ function TambahSasaranProgramPage() {
         return;
     };
     const fetchPrograms = async () => {
-        const { data: sasarans } = await supabase.from('renstra_sasaran').select('id').eq('perangkat_daerah_id', selectedDaerahId);
-        if (sasarans && sasarans.length > 0) {
-            const sasaranIds = sasarans.map(s => s.id);
-            const { data: programs } = await supabase.from('renstra_program').select('*').in('sasaran_id', sasaranIds);
-            if(programs) setProgramList(programs);
-        } else {
-            setProgramList([]);
-        }
+        const { data } = await supabase.rpc('get_program_by_pd_simple', { pd_id: selectedDaerahId });
+        if(data) setProgramList(data);
+        else setProgramList([]);
     };
     fetchPrograms();
   }, [selectedDaerahId]);
   
-  // Handler untuk input indikator
   const handleIndicatorChange = (index, event) => {
     const values = [...indicators];
     const { name, value, type, checked } = event.target;
@@ -84,7 +78,6 @@ function TambahSasaranProgramPage() {
     e.preventDefault();
     setSaving(true);
 
-    // 1. Insert data utama ke renstra_sasaran_program
     const { data: sasaranProgramData, error: sasaranError } = await supabase
         .from('renstra_sasaran_program')
         .insert({ program_id: selectedProgramId, deskripsi_sasaran_program: deskripsiSasaranProgram })
@@ -96,7 +89,6 @@ function TambahSasaranProgramPage() {
       return;
     }
 
-    // 2. Siapkan dan insert data indikator
     const indicatorsToInsert = indicators.map(ind => ({ ...ind, sasaran_program_id: sasaranProgramData.id }));
     const { error: indicatorError } = await supabase.from('renstra_indikator_sasaran_program').insert(indicatorsToInsert);
 
@@ -134,7 +126,6 @@ function TambahSasaranProgramPage() {
             <textarea value={deskripsiSasaranProgram} onChange={e => setDeskripsiSasaranProgram(e.target.value)} required className="w-full border p-2 rounded mt-1" rows="3"></textarea>
         </div>
         
-        {/* Indikator Dinamis */}
         <div className="space-y-4">
           <h3 className="text-lg font-medium text-gray-800">Indikator Sasaran Program</h3>
           {indicators.map((indicator, index) => (
@@ -174,12 +165,11 @@ function TambahSasaranProgramPage() {
         </div>
 
         <div className="flex justify-end space-x-4">
-            <Link to="/renstra/program/sasaran" className="bg-gray-200 py-2 px-4 rounded">Cancel</Link>
+            <Link to="/renstra/program/sasaran" className="bg-gray-200 py-2 px-4 rounded">Batal</Link>
             <button type="submit" disabled={saving} className="bg-blue-600 text-white py-2 px-4 rounded">{saving ? 'Menyimpan...' : 'Submit'}</button>
         </div>
       </form>
     </div>
   );
 }
-
 export default TambahSasaranProgramPage;
