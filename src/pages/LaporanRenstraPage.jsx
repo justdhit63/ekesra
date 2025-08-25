@@ -1,285 +1,570 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
-import SaveToDriveButton from '../components/SaveToDriveButton';
 
 function LaporanRenstraPage() {
+  const [perangkatDaerahList, setPerangkatDaerahList] = useState([]);
+  const [selectedDaerahId, setSelectedDaerahId] = useState('all');
   const [reportData, setReportData] = useState([]);
   const [loading, setLoading] = useState(false);
-  const years = [2025, 2026, 2027, 2028, 2029];
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      const { data, error } = await supabase.rpc('get_full_renstra_report');
-      if (data) {
-        setReportData(data);
-      } else {
-        setReportData([]);
-        console.error("Gagal mengambil data laporan:", error);
+    const fetchPerangkatDaerah = async () => {
+      try {
+        const { data, error } = await supabase.from('perangkat_daerah').select('id, nama_daerah');
+        if (error) throw error;
+        setPerangkatDaerahList(data || []);
+      } catch (error) {
+        console.error("Gagal mengambil data perangkat daerah:", error);
       }
-      setLoading(false);
     };
-    fetchData();
+    fetchPerangkatDaerah();
   }, []);
 
-  // Fungsi untuk ekspor ke Excel
-  const handleExportExcel = () => {
-    const flatData = [];
-    reportData.forEach(tujuan => {
-        tujuan.sasaran?.forEach(sasaran => {
-            // Indikator Sasaran
-            sasaran.indikator_sasaran?.forEach(indikatorSasaran => {
-                flatData.push({
-                    "Tujuan": tujuan.deskripsi_tujuan,
-                    "Sasaran": sasaran.deskripsi_sasaran,
-                    "Indikator Sasaran": indikatorSasaran.deskripsi_indikator,
-                    "Satuan": indikatorSasaran.satuan,
-                    "Kondisi Awal": indikatorSasaran.kondisi_awal,
-                    "Target 2025": indikatorSasaran.target_tahun_1,
-                    "Target 2026": indikatorSasaran.target_tahun_2,
-                    "Target 2027": indikatorSasaran.target_tahun_3,
-                    "Target 2028": indikatorSasaran.target_tahun_4,
-                    "Target 2029": indikatorSasaran.target_tahun_5,
-                    "Kondisi Akhir": indikatorSasaran.kondisi_akhir,
-                    "Program": "",
-                    "Kegiatan": "",
-                    "Indikator Kegiatan": ""
-                });
-            });
-            // Program, Kegiatan, dan Indikator Kegiatan
-            sasaran.program?.forEach(program => {
-                program.kegiatan?.forEach(kegiatan => {
-                    kegiatan.indikator_kegiatan?.forEach(indikatorKegiatan => {
-                        flatData.push({
-                            "Tujuan": tujuan.deskripsi_tujuan,
-                            "Sasaran": sasaran.deskripsi_sasaran,
-                            "Indikator Sasaran": "",
-                            "Satuan": indikatorKegiatan.satuan,
-                            "Kondisi Awal": indikatorKegiatan.kondisi_awal,
-                            "Target 2025": indikatorKegiatan.target_tahun_1,
-                            "Target 2026": indikatorKegiatan.target_tahun_2,
-                            "Target 2027": indikatorKegiatan.target_tahun_3,
-                            "Target 2028": indikatorKegiatan.target_tahun_4,
-                            "Target 2029": indikatorKegiatan.target_tahun_5,
-                            "Kondisi Akhir": indikatorKegiatan.kondisi_akhir,
-                            "Program": program.deskripsi_program,
-                            "Kegiatan": kegiatan.deskripsi_kegiatan,
-                            "Indikator Kegiatan": indikatorKegiatan.deskripsi_indikator
-                        });
-                    });
-                });
-            });
-        });
-    });
+  // Fetch kebijakan data berdasarkan renstra_sasaran_id
+  const fetchKebijakanBySasaranId = async (sasaranId) => {
+    try {
+      const { data, error } = await supabase
+        .from('renstra_program')
+        .select('id, deskripsi_program')
+        .eq('sasaran_id', sasaranId)
+        .limit(1);
 
-    if (flatData.length === 0) {
-        alert("Tidak ada data untuk diekspor!");
-        return;
+      if (error) throw error;
+      return data && data.length > 0 ? data[0] : null;
+    } catch (error) {
+      console.error('Error fetching kebijakan:', error);
+      return null;
     }
-
-    const worksheet = XLSX.utils.json_to_sheet(flatData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Renstra");
-    XLSX.writeFile(workbook, "Laporan_Renstra.xlsx");
   };
 
-  // Fungsi untuk ekspor ke PDF
-  const handleExportPdf = () => {
-    if (!reportData || reportData.length === 0) {
-        alert("Tidak ada data untuk diekspor!");
-        return;
+  // // Fetch RPD data berdasarkan perangkat_daerah_id
+  // const fetchRpdDataByPdId = async () => {
+  //   try {
+  //     const { data, error } = await supabase
+  //       .from('tujuan_rpd')
+  //       .select(`
+  //         id,
+  //         deskripsi,
+  //         sasaran_rpd (
+  //           id,
+  //           deskripsi
+  //         )
+  //       `);
+
+  //     if (error) throw error;
+  //     return data || [];
+  //   } catch (error) {
+  //     console.error('Error fetching RPD data:', error);
+  //     return [];
+  //   }
+  // };
+
+  // Fetch complete hierarchical data tanpa relasi ke RPD
+  const fetchCompleteReportData = async (pdId) => {
+    try {
+      const { data, error } = await supabase
+        .from('renstra_sasaran_sub_kegiatan')
+        .select(`
+          id,
+          deskripsi_sasaran_sub_kegiatan,
+          renstra_sub_kegiatan!inner (
+            id,
+            deskripsi_sub_kegiatan,
+            renstra_kegiatan!inner (
+              id,
+              deskripsi_kegiatan,
+              renstra_program!inner (
+                id,
+                deskripsi_program,
+                renstra_sasaran!inner (
+                  id,
+                  deskripsi_sasaran,
+                  renstra_tujuan!inner (
+                    id,
+                    deskripsi_tujuan
+                  )
+                )
+              )
+            )
+          ),
+          renstra_indikator_sub_kegiatan (
+            id,
+            deskripsi_indikator,
+            satuan,
+            pk,
+            iku,
+            cara_pengukuran,
+            kondisi_awal,
+            target_tahun_1,
+            target_tahun_2,
+            target_tahun_3,
+            target_tahun_4,
+            target_tahun_5,
+            kondisi_akhir,
+            target_renja
+          )
+        `);
+
+      if (error) throw error;
+
+      // Ambil data kebijakan untuk setiap sasaran
+      const dataWithKebijakan = await Promise.all(
+        (data || []).map(async (item) => {
+          const sasaranId = item.renstra_sub_kegiatan?.renstra_kegiatan?.renstra_program?.renstra_sasaran?.id;
+          const kebijakan = sasaranId ? await fetchKebijakanBySasaranId(sasaranId) : null;
+
+          return {
+            ...item,
+            kebijakan_data: kebijakan,
+            perangkat_daerah_id: pdId
+          };
+        })
+      );
+
+      return dataWithKebijakan;
+    } catch (error) {
+      console.error('Error fetching complete report data:', error);
+      return [];
     }
-
-    const doc = new jsPDF({ orientation: 'landscape' });
-    doc.setFontSize(16);
-    doc.text("Laporan Rencana Strategis (Renstra)", 14, 16);
-    doc.setFontSize(10);
-    doc.text("Data Indikator Sasaran", 14, 28);
-    
-    // Tabel Indikator Sasaran
-    let tableColumnSasaran = ["Tujuan", "Sasaran", "Indikator", "Satuan", "Kondisi Awal", ...years.map(year => `Target ${year}`), "Kondisi Akhir"];
-    let tableRowsSasaran = [];
-    reportData.forEach(tujuan => {
-        tujuan.sasaran?.forEach(sasaran => {
-            sasaran.indikator_sasaran?.forEach(indikator => {
-                tableRowsSasaran.push([
-                    tujuan.deskripsi_tujuan || '',
-                    sasaran.deskripsi_sasaran || '',
-                    indikator.deskripsi_indikator || '',
-                    indikator.satuan || '',
-                    indikator.kondisi_awal || '',
-                    indikator.target_tahun_1 || '',
-                    indikator.target_tahun_2 || '',
-                    indikator.target_tahun_3 || '',
-                    indikator.target_tahun_4 || '',
-                    indikator.target_tahun_5 || '',
-                    indikator.kondisi_akhir || '',
-                ]);
-            });
-        });
-    });
-    
-    autoTable(doc, {
-        head: [tableColumnSasaran],
-        body: tableRowsSasaran,
-        startY: 32,
-        theme: 'grid',
-        styles: { fontSize: 6 },
-        headStyles: { fillColor: [22, 160, 133] },
-    });
-    
-    // Tabel Indikator Kegiatan
-    doc.addPage();
-    doc.setFontSize(16);
-    doc.text("Laporan Rencana Strategis (Renstra)", 14, 16);
-    doc.setFontSize(10);
-    doc.text("Data Indikator Kegiatan", 14, 28);
-    
-    let tableColumnKegiatan = ["Program", "Kegiatan", "Indikator", "Satuan", "Kondisi Awal", ...years.map(year => `Target ${year}`), "Kondisi Akhir"];
-    let tableRowsKegiatan = [];
-    reportData.forEach(tujuan => {
-        tujuan.sasaran?.forEach(sasaran => {
-            sasaran.program?.forEach(program => {
-                program.kegiatan?.forEach(kegiatan => {
-                    kegiatan.indikator_kegiatan?.forEach(indikator => {
-                        tableRowsKegiatan.push([
-                            program.deskripsi_program || '',
-                            kegiatan.deskripsi_kegiatan || '',
-                            indikator.deskripsi_indikator || '',
-                            indikator.satuan || '',
-                            indikator.kondisi_awal || '',
-                            indikator.target_tahun_1 || '',
-                            indikator.target_tahun_2 || '',
-                            indikator.target_tahun_3 || '',
-                            indikator.target_tahun_4 || '',
-                            indikator.target_tahun_5 || '',
-                            indikator.kondisi_akhir || '',
-                        ]);
-                    });
-                });
-            });
-        });
-    });
-
-    autoTable(doc, {
-        head: [tableColumnKegiatan],
-        body: tableRowsKegiatan,
-        startY: 32,
-        theme: 'grid',
-        styles: { fontSize: 6 },
-        headStyles: { fillColor: [22, 160, 133] },
-    });
-
-    doc.save(`Laporan_Renstra.pdf`);
   };
 
-  const generatePdfData = () => {
-    // Fungsi ini membutuhkan implementasi lebih lanjut.
-    alert("Fungsi ini membutuhkan implementasi lebih lanjut.");
-    return null;
+  const fetchReportData = async () => {
+    setLoading(true);
+
+    try {
+      if (selectedDaerahId === 'all') {
+        // Ambil data dari semua perangkat daerah
+        const allData = [];
+
+        for (const pd of perangkatDaerahList) {
+          const data = await fetchCompleteReportData(pd.id);
+          allData.push(...data.map(item => ({
+            ...item,
+            nama_perangkat_daerah: pd.nama_daerah
+          })));
+        }
+
+        setReportData(allData);
+      } else {
+        // Ambil data untuk perangkat daerah tertentu
+        const data = await fetchCompleteReportData(selectedDaerahId);
+        const selectedPd = perangkatDaerahList.find(pd => pd.id === selectedDaerahId);
+        setReportData(data.map(item => ({
+          ...item,
+          nama_perangkat_daerah: selectedPd?.nama_daerah || '-'
+        })));
+      }
+    } catch (error) {
+      console.error("Gagal mengambil data laporan:", error);
+      setReportData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (perangkatDaerahList.length > 0) {
+      fetchReportData();
+    }
+  }, [selectedDaerahId, perangkatDaerahList]);
+
+  // Flatten data dengan struktur hierarki yang benar
+  const flattenedData = reportData.flatMap(sasaranSubKegiatan => {
+    // Cek apakah struktur data lengkap tersedia
+    const subKegiatan = sasaranSubKegiatan?.renstra_sub_kegiatan;
+    if (!subKegiatan) return [];
+
+    const kegiatan = subKegiatan?.renstra_kegiatan;
+    if (!kegiatan) return [];
+
+    const program = kegiatan?.renstra_program;
+    if (!program) return [];
+
+    const renstraSasaran = program?.renstra_sasaran;
+    if (!renstraSasaran) return [];
+
+    const renstraTujuan = renstraSasaran?.renstra_tujuan;
+    if (!renstraTujuan) return [];
+
+    // Ambil data kebijakan dari fetch terpisah
+    const kebijakan = sasaranSubKegiatan?.kebijakan_data;
+
+    // Jika ada indikator, map setiap indikator
+    if (sasaranSubKegiatan.renstra_indikator_sub_kegiatan && sasaranSubKegiatan.renstra_indikator_sub_kegiatan.length > 0) {
+      return sasaranSubKegiatan.renstra_indikator_sub_kegiatan.map(indikator => ({
+        nama_perangkat_daerah: sasaranSubKegiatan.nama_perangkat_daerah || '-',
+        renstra_tujuan: renstraTujuan.deskripsi_tujuan || '-',
+        renstra_sasaran: renstraSasaran.deskripsi_sasaran || '-',
+        renstra_kebijakan: kebijakan?.deskripsi_kebijakan || '-',
+        renstra_program: program.deskripsi_program || '-',
+        renstra_kegiatan: kegiatan.deskripsi_kegiatan || '-',
+        renstra_sub_kegiatan: subKegiatan.deskripsi_sub_kegiatan || '-',
+        sasaran_sub_kegiatan: sasaranSubKegiatan.deskripsi_sasaran_sub_kegiatan || '-',
+        deskripsi_indikator: indikator.deskripsi_indikator || '-',
+        satuan: indikator.satuan || '-',
+        pk: indikator.pk || false,
+        iku: indikator.iku || false,
+        cara_pengukuran: indikator.cara_pengukuran || '-',
+        kondisi_awal: indikator.kondisi_awal || '-',
+        target_tahun_1: indikator.target_tahun_1 || '-',
+        target_tahun_2: indikator.target_tahun_2 || '-',
+        target_tahun_3: indikator.target_tahun_3 || '-',
+        target_tahun_4: indikator.target_tahun_4 || '-',
+        target_tahun_5: indikator.target_tahun_5 || '-',
+        kondisi_akhir: indikator.kondisi_akhir || '-',
+        target_renja: indikator.target_renja || '-',
+      }));
+    } else {
+      // Jika tidak ada indikator, tetap tampilkan data hierarki dengan indikator kosong
+      return [{
+        nama_perangkat_daerah: sasaranSubKegiatan.nama_perangkat_daerah || '-',
+        renstra_tujuan: renstraTujuan.deskripsi_tujuan || '-',
+        renstra_sasaran: renstraSasaran.deskripsi_sasaran || '-',
+        renstra_kebijakan: kebijakan?.deskripsi_kebijakan || '-',
+        renstra_program: program.deskripsi_program || '-',
+        renstra_kegiatan: kegiatan.deskripsi_kegiatan || '-',
+        renstra_sub_kegiatan: subKegiatan.deskripsi_sub_kegiatan || '-',
+        sasaran_sub_kegiatan: sasaranSubKegiatan.deskripsi_sasaran_sub_kegiatan || '-',
+        deskripsi_indikator: '-',
+        satuan: '-',
+        pk: false,
+        iku: false,
+        cara_pengukuran: '-',
+        kondisi_awal: '-',
+        target_tahun_1: '-',
+        target_tahun_2: '-',
+        target_tahun_3: '-',
+        target_tahun_4: '-',
+        target_tahun_5: '-',
+        kondisi_akhir: '-',
+        target_renja: '-',
+      }];
+    }
+  });
+
+  // Export to Excel function
+  const exportToExcel = () => {
+    if (flattenedData.length === 0) {
+      alert('Tidak ada data untuk diekspor');
+      return;
+    }
+
+    // Prepare data for Excel
+    const excelData = flattenedData.map((item, index) => ({
+      'No': index + 1,
+      'Perangkat Daerah': item.nama_perangkat_daerah,
+      'Renstra Tujuan': item.renstra_tujuan,
+      'Renstra Sasaran': item.renstra_sasaran,
+      'Renstra Kebijakan': item.renstra_kebijakan,
+      'Renstra Program': item.renstra_program,
+      'Renstra Kegiatan': item.renstra_kegiatan,
+      'Renstra Sub Kegiatan': item.renstra_sub_kegiatan,
+      'Sasaran Sub Kegiatan': item.sasaran_sub_kegiatan,
+      'Indikator': item.deskripsi_indikator,
+      'Satuan': item.satuan,
+      'PK': item.pk ? 'Ya' : 'Tidak',
+      'IKU': item.iku ? 'Ya' : 'Tidak',
+      'Cara Pengukuran': item.cara_pengukuran,
+      'Kondisi Awal': item.kondisi_awal,
+      '2025': item.target_tahun_1,
+      '2026': item.target_tahun_2,
+      '2027': item.target_tahun_3,
+      '2028': item.target_tahun_4,
+      '2029': item.target_tahun_5,
+      'Kondisi Akhir': item.kondisi_akhir,
+      'Target Renja': item.target_renja,
+    }));
+
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(excelData);
+
+    // Set column widths
+    const colWidths = [
+      { wch: 5 },   // No
+      { wch: 25 },  // Perangkat Daerah
+      { wch: 30 },  // Renstra Tujuan
+      { wch: 30 },  // Renstra Sasaran
+      { wch: 30 },  // Renstra Kebijakan
+      { wch: 30 },  // Renstra Program
+      { wch: 30 },  // Renstra Kegiatan
+      { wch: 30 },  // Renstra Sub Kegiatan
+      { wch: 30 },  // Sasaran Sub Kegiatan
+      { wch: 40 },  // Indikator
+      { wch: 15 },  // Satuan
+      { wch: 8 },   // PK
+      { wch: 8 },   // IKU
+      { wch: 30 },  // Cara Pengukuran
+      { wch: 15 },  // Kondisi Awal
+      { wch: 10 },  // 2025
+      { wch: 10 },  // 2026
+      { wch: 10 },  // 2027
+      { wch: 10 },  // 2028
+      { wch: 10 },  // 2029
+      { wch: 15 },  // Kondisi Akhir
+      { wch: 15 },  // Target Renja
+    ];
+    ws['!cols'] = colWidths;
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Laporan Renstra');
+
+    // Generate filename
+    const selectedPdName = selectedDaerahId === 'all' ? 'Semua_PD' : 
+      perangkatDaerahList.find(pd => pd.id === selectedDaerahId)?.nama_daerah?.replace(/\s+/g, '_') || 'Unknown';
+    const filename = `Laporan_Renstra_${selectedPdName}_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    // Save file
+    XLSX.writeFile(wb, filename);
+  };
+
+  // Export to PDF function
+  const exportToPDF = () => {
+    if (flattenedData.length === 0) {
+      alert('Tidak ada data untuk diekspor');
+      return;
+    }
+
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    // Add title
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    const title = 'Laporan Lengkap Renstra';
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const titleWidth = doc.getTextWidth(title);
+    const titleX = (pageWidth - titleWidth) / 2;
+    doc.text(title, titleX, 20);
+
+    // Add subtitle with selected PD
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    const selectedPdName = selectedDaerahId === 'all' ? 'Semua Perangkat Daerah' : 
+      perangkatDaerahList.find(pd => pd.id === selectedDaerahId)?.nama_daerah || 'Unknown';
+    const subtitle = `Perangkat Daerah: ${selectedPdName}`;
+    const subtitleWidth = doc.getTextWidth(subtitle);
+    const subtitleX = (pageWidth - subtitleWidth) / 2;
+    doc.text(subtitle, subtitleX, 30);
+
+    // Prepare table data
+    const tableData = flattenedData.map((item, index) => [
+      index + 1,
+      item.nama_perangkat_daerah,
+      item.renstra_tujuan,
+      item.renstra_sasaran,
+      item.renstra_kebijakan,
+      item.renstra_program,
+      item.renstra_kegiatan,
+      item.renstra_sub_kegiatan,
+      item.sasaran_sub_kegiatan,
+      item.deskripsi_indikator,
+      item.satuan,
+      item.pk ? 'Ya' : 'Tidak',
+      item.iku ? 'Ya' : 'Tidak',
+      item.cara_pengukuran,
+      item.kondisi_awal,
+      item.target_tahun_1,
+      item.target_tahun_2,
+      item.target_tahun_3,
+      item.target_tahun_4,
+      item.target_tahun_5,
+      item.kondisi_akhir,
+      item.target_renja,
+    ]);
+
+    const tableHeaders = [
+      'No', 'PD', 'Tujuan', 'Sasaran', 'Kebijakan', 'Program', 
+      'Kegiatan', 'Sub Kegiatan', 'Sasaran SK', 'Indikator', 
+      'Satuan', 'PK', 'IKU', 'Cara Ukur', 'K.Awal', 
+      '2025', '2026', '2027', '2028', '2029', 'K.Akhir', 'T.Renja'
+    ];
+
+    // Add table using the correct method
+    autoTable(doc, {
+      head: [tableHeaders],
+      body: tableData,
+      startY: 40,
+      theme: 'striped',
+      styles: {
+        fontSize: 6,
+        cellPadding: 2,
+        overflow: 'linebreak',
+        halign: 'left',
+        valign: 'top'
+      },
+      headStyles: {
+        fillColor: [66, 139, 202],
+        textColor: 255,
+        fontSize: 7,
+        fontStyle: 'bold',
+        halign: 'center'
+      },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 8 },   // No
+        10: { cellWidth: 12 },                    // Satuan
+        11: { halign: 'center', cellWidth: 8 },   // PK
+        12: { halign: 'center', cellWidth: 8 },   // IKU
+        14: { halign: 'center', cellWidth: 12 },  // Kondisi Awal
+        15: { halign: 'center', cellWidth: 10 },  // 2025
+        16: { halign: 'center', cellWidth: 10 },  // 2026
+        17: { halign: 'center', cellWidth: 10 },  // 2027
+        18: { halign: 'center', cellWidth: 10 },  // 2028
+        19: { halign: 'center', cellWidth: 10 },  // 2029
+        20: { halign: 'center', cellWidth: 12 },  // Kondisi Akhir
+        21: { halign: 'center', cellWidth: 12 },  // Target Renja
+      },
+      margin: { top: 40, left: 10, right: 10 },
+      didDrawPage: (data) => {
+        // Add page number
+        const pageCount = doc.internal.getNumberOfPages();
+        const currentPage = doc.internal.getCurrentPageInfo().pageNumber;
+        doc.setFontSize(10);
+        doc.text(`Halaman ${currentPage} dari ${pageCount}`, pageWidth - 30, doc.internal.pageSize.getHeight() - 10);
+      }
+    });
+
+    // Generate filename
+    const filename = `Laporan_Renstra_${selectedPdName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+    
+    // Save PDF
+    doc.save(filename);
   };
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-800 mb-4">Laporan Renstra</h1>
-      <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex justify-end space-x-2">
-        <button onClick={handleExportExcel} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors">
-          Ekspor Excel
-        </button>
-        <button onClick={handleExportPdf} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition-colors">
-          Ekspor PDF
-        </button>
-        <SaveToDriveButton getFileData={generatePdfData} />
-      </div>
+      <h1 className="text-xl font-bold text-gray-800 mb-4">Laporan Lengkap Renstra</h1>
 
-      {/* Tampilan Laporan di Halaman Web */}
-      <div id="laporan-renstra" className="bg-white p-6 rounded-lg shadow-md">
-        {loading ? <p className="text-center">Memuat laporan...</p> : (
-            reportData.length > 0 ? reportData.map((tujuan, index) => (
-            <div key={index} className="mb-6 last:mb-0">
-              <h2 className="text-lg font-bold bg-blue-100 p-2 rounded">Tujuan: {tujuan.deskripsi_tujuan}</h2>
-              {tujuan.sasaran?.map((sasaran, idx) => (
-                <div key={idx} className="ml-4 mt-2 border-l-2 border-blue-200 pl-4">
-                  <h3 className="font-semibold text-gray-800">Sasaran: {sasaran.deskripsi_sasaran}</h3>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full text-sm mt-1">
-                      <thead className="bg-gray-100">
-                        <tr>
-                          <th className="border p-2 text-left">Indikator</th>
-                          <th className="border p-2 text-left">Satuan</th>
-                          <th className="border p-2 text-left">Kondisi Awal</th>
-                          {years.map(year => (
-                              <th key={year} className="border p-2 text-left">Target {year}</th>
-                          ))}
-                          <th className="border p-2 text-left">Kondisi Akhir</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {sasaran.indikator_sasaran?.map((ind, i) => (
-                          <tr key={i} className="hover:bg-gray-50">
-                            <td className="border p-2">{ind.deskripsi_indikator}</td>
-                            <td className="border p-2">{ind.satuan}</td>
-                            <td className="border p-2">{ind.kondisi_awal}</td>
-                            <td className="border p-2">{ind.target_tahun_1}</td>
-                            <td className="border p-2">{ind.target_tahun_2}</td>
-                            <td className="border p-2">{ind.target_tahun_3}</td>
-                            <td className="border p-2">{ind.target_tahun_4}</td>
-                            <td className="border p-2">{ind.target_tahun_5}</td>
-                            <td className="border p-2">{ind.kondisi_akhir}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Program dan Kegiatan di bawah Sasaran */}
-                  {sasaran.program?.map((program, progIdx) => (
-                      <div key={progIdx} className="ml-4 mt-4 border-l-2 border-green-200 pl-4">
-                          <h4 className="font-semibold text-gray-700">Program: {program.deskripsi_program}</h4>
-                          {program.kegiatan?.map((kegiatan, kegIdx) => (
-                              <div key={kegIdx} className="ml-4 mt-2 border-l-2 border-yellow-200 pl-4">
-                                  <h5 className="font-medium text-gray-600">Kegiatan: {kegiatan.deskripsi_kegiatan}</h5>
-                                  <div className="overflow-x-auto mt-1">
-                                      <table className="min-w-full text-sm">
-                                          <thead className="bg-gray-50">
-                                              <tr>
-                                                  <th className="border p-2 text-left">Indikator Kegiatan</th>
-                                                  <th className="border p-2 text-left">Satuan</th>
-                                                  <th className="border p-2 text-left">Kondisi Awal</th>
-                                                  {years.map(year => (
-                                                      <th key={year} className="border p-2 text-left">Target {year}</th>
-                                                  ))}
-                                                  <th className="border p-2 text-left">Kondisi Akhir</th>
-                                              </tr>
-                                          </thead>
-                                          <tbody>
-                                              {kegiatan.indikator_kegiatan?.map((ind, i) => (
-                                                  <tr key={i} className="hover:bg-gray-50">
-                                                      <td className="border p-2">{ind.deskripsi_indikator}</td>
-                                                      <td className="border p-2">{ind.satuan}</td>
-                                                      <td className="border p-2">{ind.kondisi_awal}</td>
-                                                      <td className="border p-2">{ind.target_tahun_1}</td>
-                                                      <td className="border p-2">{ind.target_tahun_2}</td>
-                                                      <td className="border p-2">{ind.target_tahun_3}</td>
-                                                      <td className="border p-2">{ind.target_tahun_4}</td>
-                                                      <td className="border p-2">{ind.target_tahun_5}</td>
-                                                      <td className="border p-2">{ind.kondisi_akhir}</td>
-                                                  </tr>
-                                              ))}
-                                          </tbody>
-                                      </table>
-                                  </div>
-                              </div>
-                          ))}
-                      </div>
-                  ))}
-                </div>
+      <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+        <div className="mb-4 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div className="w-full md:w-1/3">
+            <label className="block text-sm font-medium text-gray-700">Perangkat Daerah</label>
+            <select
+              value={selectedDaerahId}
+              onChange={(e) => setSelectedDaerahId(e.target.value)}
+              className="mt-1 block w-full border p-2 rounded-md"
+            >
+              <option value="all">Semua Perangkat Daerah</option>
+              {perangkatDaerahList.map(daerah => (
+                <option key={daerah.id} value={daerah.id}>
+                  {daerah.nama_daerah}
+                </option>
               ))}
+            </select>
+          </div>
+          {/* Export buttons */}
+          {flattenedData.length > 0 && (
+            <div className="flex gap-2">
+              <button
+                onClick={exportToExcel}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors duration-200 flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+                </svg>
+                Excel
+              </button>
+              
+              <button
+                onClick={exportToPDF}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors duration-200 flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                </svg>
+                PDF
+              </button>
             </div>
-          )) : <p className="text-center text-gray-500">Tidak ada data laporan untuk ditampilkan.</p>
+          )}
+        </div>
+
+        {loading ? (
+          <p className="text-center py-4">Memuat data...</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full bg-white border border-gray-300 text-xs">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">No</th>
+                  <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Perangkat Daerah</th>
+                  <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Renstra Tujuan</th>
+                  <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Renstra Sasaran</th>
+                  <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Renstra Kebijakan</th>
+                  <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Renstra Program</th>
+                  <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Renstra Kegiatan</th>
+                  <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Renstra Sub Kegiatan</th>
+                  <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Sasaran Sub Kegiatan</th>
+                  <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Indikator</th>
+                  <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Satuan</th>
+                  <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">PK</th>
+                  <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">IKU</th>
+                  <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Cara Pengukuran</th>
+                  <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">Kondisi Awal</th>
+                  <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">2025</th>
+                  <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">2026</th>
+                  <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">2027</th>
+                  <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">2028</th>
+                  <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">2029</th>
+                  <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">Kondisi Akhir</th>
+                  <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">Target Renja</th>
+                </tr>
+              </thead>
+              <tbody>
+                {flattenedData.length > 0 ? (
+                  flattenedData.map((item, index) => (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="py-2 px-2 border border-gray-300 text-center">{index + 1}</td>
+                      <td className="py-2 px-2 border border-gray-300">{item.nama_perangkat_daerah}</td>
+                      <td className="py-2 px-2 border border-gray-300">{item.renstra_tujuan}</td>
+                      <td className="py-2 px-2 border border-gray-300">{item.renstra_sasaran}</td>
+                      <td className="py-2 px-2 border border-gray-300">{item.renstra_kebijakan}</td>
+                      <td className="py-2 px-2 border border-gray-300">{item.renstra_program}</td>
+                      <td className="py-2 px-2 border border-gray-300">{item.renstra_kegiatan}</td>
+                      <td className="py-2 px-2 border border-gray-300">{item.renstra_sub_kegiatan}</td>
+                      <td className="py-2 px-2 border border-gray-300">{item.sasaran_sub_kegiatan}</td>
+                      <td className="py-2 px-2 border border-gray-300">{item.deskripsi_indikator}</td>
+                      <td className="py-2 px-2 border border-gray-300">{item.satuan}</td>
+                      <td className="py-2 px-2 border border-gray-300 text-center">{item.pk ? '✓' : '-'}</td>
+                      <td className="py-2 px-2 border border-gray-300 text-center">{item.iku ? '✓' : '-'}</td>
+                      <td className="py-2 px-2 border border-gray-300">{item.cara_pengukuran}</td>
+                      <td className="py-2 px-2 border border-gray-300 text-center">{item.kondisi_awal}</td>
+                      <td className="py-2 px-2 border border-gray-300 text-center">{item.target_tahun_1}</td>
+                      <td className="py-2 px-2 border border-gray-300 text-center">{item.target_tahun_2}</td>
+                      <td className="py-2 px-2 border border-gray-300 text-center">{item.target_tahun_3}</td>
+                      <td className="py-2 px-2 border border-gray-300 text-center">{item.target_tahun_4}</td>
+                      <td className="py-2 px-2 border border-gray-300 text-center">{item.target_tahun_5}</td>
+                      <td className="py-2 px-2 border border-gray-300 text-center">{item.kondisi_akhir}</td>
+                      <td className="py-2 px-2 border border-gray-300 text-center">{item.target_renja}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="22" className="py-4 px-2 text-center text-gray-500">
+                      Belum ada data untuk ditampilkan
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Summary */}
+        {flattenedData.length > 0 && (
+          <div className="mt-4 p-3 bg-gray-50 rounded-md">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
+              <p>Total indikator: <span className="font-semibold">{flattenedData.length}</span></p>
+              <p>Total sasaran sub kegiatan: <span className="font-semibold">{new Set(flattenedData.map(item => item.sasaran_sub_kegiatan)).size}</span></p>
+              <p>Total sub kegiatan: <span className="font-semibold">{new Set(flattenedData.map(item => item.renstra_sub_kegiatan)).size}</span></p>
+              <p>Total perangkat daerah: <span className="font-semibold">{new Set(flattenedData.map(item => item.nama_perangkat_daerah)).size}</span></p>
+            </div>
+          </div>
         )}
       </div>
     </div>
