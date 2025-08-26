@@ -199,6 +199,11 @@ function Sidebar({ isOpen, toggle }) {
                     Target PK Indikator Kegiatan
                   </NavLink>
                 </li>
+                <li>
+                  <NavLink to="/pk/kegiatan/triwulan" style={({ isActive }) => isActive ? activeLinkStyle : undefined} className="block p-2 rounded-md hover:bg-green-800 transition-colors text-sm">
+                    Target PK Triwulan Kegiatan
+                  </NavLink>
+                </li>
                 {/* Item menu PK lainnya bisa ditambahkan di sini */}
               </ul>
             )}

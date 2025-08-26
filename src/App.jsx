@@ -58,6 +58,7 @@ import TambahIndikatorSasaranRpdPage from './pages/TambahIndikatorSasaranPage';
 import TambahPerangkatDaerahPage from './pages/TambahPerangkatDaerahPage';
 import PKTriwulanSasaranPage from './pages/PKTriwulanSasaranPage';
 import PKTriwulanProgramPage from './pages/PKTriwulanProgramPage';
+import PKTriwulanKegiatanPage from './pages/PKTriwulanKegiatanPage';
 
 // Buat halaman placeholder untuk contoh
 const LaporanPage = () => <div><h1>Halaman Laporan</h1></div>;
@@ -482,6 +483,14 @@ function App() {
         element={
           <ProtectedRoute session={session}>
             <Layout><PKTahunanKegiatanPage /></Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pk/kegiatan/triwulan"
+        element={
+          <ProtectedRoute session={session}>
+            <Layout><PKTriwulanKegiatanPage /></Layout>
           </ProtectedRoute>
         }
       />
