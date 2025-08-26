@@ -180,13 +180,18 @@ function Sidebar({ isOpen, toggle }) {
                   {isTargetPkSasaranOpen && (
                     <ul className="pl-4 py-1 text-xs">
                       <li><NavLink to="/pk/sasaran/tahunan" className="block p-2 rounded-md hover:bg-green-800">Tahunan</NavLink></li>
-                      <li><NavLink to="#" className="block p-2 rounded-md hover:bg-green-800 text-gray-400">Triwulan</NavLink></li>
+                      <li><NavLink to="/pk/sasaran/triwulan" className="block p-2 rounded-md hover:bg-green-800">Triwulan</NavLink></li>
                     </ul>
                   )}
                 </li>
                 <li>
                   <NavLink to="/pk/program/tahunan" style={({ isActive }) => isActive ? activeLinkStyle : undefined} className="block p-2 rounded-md hover:bg-green-800 transition-colors text-sm">
                     Target PK Indikator Program
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink to="/pk/program/triwulan" style={({ isActive }) => isActive ? activeLinkStyle : undefined} className="block p-2 rounded-md hover:bg-green-800 transition-colors text-sm">
+                    Target PK Triwulan Program
                   </NavLink>
                 </li>
                 <li>

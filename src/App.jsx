@@ -56,6 +56,8 @@ import EditSasaranRpdPage from './pages/EditSasaranRpdPage';
 import TambahIndikatorTujuanRpdPage from './pages/TambahIndikatorTujuanRpdPage';
 import TambahIndikatorSasaranRpdPage from './pages/TambahIndikatorSasaranPage';
 import TambahPerangkatDaerahPage from './pages/TambahPerangkatDaerahPage';
+import PKTriwulanSasaranPage from './pages/PKTriwulanSasaranPage';
+import PKTriwulanProgramPage from './pages/PKTriwulanProgramPage';
 
 // Buat halaman placeholder untuk contoh
 const LaporanPage = () => <div><h1>Halaman Laporan</h1></div>;
@@ -452,10 +454,26 @@ function App() {
         }
       />
       <Route
+        path="/pk/sasaran/triwulan"
+        element={
+          <ProtectedRoute session={session}>
+            <Layout><PKTriwulanSasaranPage /></Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/pk/program/tahunan"
         element={
           <ProtectedRoute session={session}>
             <Layout><PKTahunanProgramPage /></Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pk/program/triwulan"
+        element={
+          <ProtectedRoute session={session}>
+            <Layout><PKTriwulanProgramPage /></Layout>
           </ProtectedRoute>
         }
       />

@@ -65,7 +65,7 @@ function RenstraSasaranProgramAccordion({ sasaran, onDataChange }) {
                                 </tr>
                             </thead>
                             <tbody className="divide-y">
-                                {sasaran.renstra_program.length > 0 ? (
+                                {sasaran.renstra_program && sasaran.renstra_program.length > 0 ? (
                                     sasaran.renstra_program.map(program => (
                                         <tr key={program.id} className="hover:bg-gray-50">
                                             <td className="py-2 px-4 border border-gray-300 font-medium">{program.deskripsi_program}</td>
