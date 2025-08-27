@@ -66,7 +66,6 @@ function EditProgramPage() {
           tahun3: programData.anggaran_tahun_3,
           tahun4: programData.anggaran_tahun_4,
           tahun5: programData.anggaran_tahun_5,
-          renja: programData.anggaran_renja,
       });
       
       // Ambil semua data untuk dropdown
@@ -129,7 +128,6 @@ function EditProgramPage() {
         anggaran_tahun_3: anggaran.tahun3,
         anggaran_tahun_4: anggaran.tahun4,
         anggaran_tahun_5: anggaran.tahun5,
-        anggaran_renja: anggaran.renja,
       })
       .eq('id', id);
 
@@ -191,7 +189,7 @@ function EditProgramPage() {
                 <input type="number" name="tahun3" placeholder="Anggaran 2027" value={anggaran.tahun3 || ''} onChange={handleAnggaranChange} required className="border p-2 rounded-md" />
                 <input type="number" name="tahun4" placeholder="Anggaran 2028" value={anggaran.tahun4 || ''} onChange={handleAnggaranChange} required className="border p-2 rounded-md" />
                 <input type="number" name="tahun5" placeholder="Anggaran 2029" value={anggaran.tahun5 || ''} onChange={handleAnggaranChange} required className="border p-2 rounded-md" />
-                <input type="number" name="renja" placeholder="Anggaran Renja" value={anggaran.renja || ''} onChange={handleAnggaranChange} required className="border p-2 rounded-md" />
+                {/* <input type="number" name="renja" placeholder="Anggaran Renja" value={anggaran.renja || ''} onChange={handleAnggaranChange} required className="border p-2 rounded-md" /> */}
             </div>
         </div>
 

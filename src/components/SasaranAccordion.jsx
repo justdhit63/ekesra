@@ -23,7 +23,7 @@ function SasaranAccordion({ sasaran, onDataChange }) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md">
+    <div className="bg-white rounded-lg shadow-md mb-4">
       {/* Header Accordion (biru) */}
       <button 
         onClick={() => setIsOpen(!isOpen)}

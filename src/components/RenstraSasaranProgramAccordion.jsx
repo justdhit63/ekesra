@@ -59,7 +59,7 @@ function RenstraSasaranProgramAccordion({ sasaran, onDataChange }) {
                                     <th className="py-2 px-4 border border-gray-300 border-b border-b-black text-left font-semibold text-gray-700">Anggaran 2027</th>
                                     <th className="py-2 px-4 border border-gray-300 border-b border-b-black text-left font-semibold text-gray-700">Anggaran 2028</th>
                                     <th className="py-2 px-4 border border-gray-300 border-b border-b-black text-left font-semibold text-gray-700">Anggaran 2029</th>
-                                    <th className="py-2 px-4 border border-gray-300 border-b border-b-black text-left font-semibold text-gray-700">Anggaran Renja</th>
+                                    {/* <th className="py-2 px-4 border border-gray-300 border-b border-b-black text-left font-semibold text-gray-700">Anggaran Renja</th> */}
                                     <th className="py-2 px-4 border border-gray-300 border-b border-b-black text-left font-semibold text-gray-700">Sumber Anggaran</th>
                                     <th className="py-2 px-4 border border-gray-300 border-b border-b-black text-center font-semibold text-gray-700">Aksi</th>
                                 </tr>
@@ -74,7 +74,7 @@ function RenstraSasaranProgramAccordion({ sasaran, onDataChange }) {
                                             <td className="py-2 px-4 border border-gray-300">{formatRupiah(program.anggaran_tahun_3)}</td>
                                             <td className="py-2 px-4 border border-gray-300">{formatRupiah(program.anggaran_tahun_4)}</td>
                                             <td className="py-2 px-4 border border-gray-300">{formatRupiah(program.anggaran_tahun_5)}</td>
-                                            <td className="py-2 px-4 border border-gray-300">{formatRupiah(program.anggaran_renja)}</td>
+                                            {/* <td className="py-2 px-4 border border-gray-300">{formatRupiah(program.anggaran_renja)}</td> */}
                                             <td className="py-2 px-4 border border-gray-300">{program.sumber_anggaran || '-'}</td>
                                             <td className="py-2 px-4 border border-gray-300 text-center">
                                                 <div className="flex justify-center space-x-2">

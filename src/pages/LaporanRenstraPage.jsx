@@ -96,15 +96,13 @@ function LaporanRenstraPage() {
             satuan,
             pk,
             iku,
-            cara_pengukuran,
             kondisi_awal,
             target_tahun_1,
             target_tahun_2,
             target_tahun_3,
             target_tahun_4,
             target_tahun_5,
-            kondisi_akhir,
-            target_renja
+            kondisi_akhir
           )
         `);
 
@@ -207,15 +205,13 @@ function LaporanRenstraPage() {
         satuan: indikator.satuan || '-',
         pk: indikator.pk || false,
         iku: indikator.iku || false,
-        cara_pengukuran: indikator.cara_pengukuran || '-',
         kondisi_awal: indikator.kondisi_awal || '-',
         target_tahun_1: indikator.target_tahun_1 || '-',
         target_tahun_2: indikator.target_tahun_2 || '-',
         target_tahun_3: indikator.target_tahun_3 || '-',
         target_tahun_4: indikator.target_tahun_4 || '-',
         target_tahun_5: indikator.target_tahun_5 || '-',
-        kondisi_akhir: indikator.kondisi_akhir || '-',
-        target_renja: indikator.target_renja || '-',
+        kondisi_akhir: indikator.kondisi_akhir || '-'
       }));
     } else {
       // Jika tidak ada indikator, tetap tampilkan data hierarki dengan indikator kosong
@@ -232,7 +228,6 @@ function LaporanRenstraPage() {
         satuan: '-',
         pk: false,
         iku: false,
-        cara_pengukuran: '-',
         kondisi_awal: '-',
         target_tahun_1: '-',
         target_tahun_2: '-',
@@ -240,7 +235,6 @@ function LaporanRenstraPage() {
         target_tahun_4: '-',
         target_tahun_5: '-',
         kondisi_akhir: '-',
-        target_renja: '-',
       }];
     }
   });
@@ -267,7 +261,6 @@ function LaporanRenstraPage() {
       'Satuan': item.satuan,
       'PK': item.pk ? 'Ya' : 'Tidak',
       'IKU': item.iku ? 'Ya' : 'Tidak',
-      'Cara Pengukuran': item.cara_pengukuran,
       'Kondisi Awal': item.kondisi_awal,
       '2025': item.target_tahun_1,
       '2026': item.target_tahun_2,
@@ -275,7 +268,6 @@ function LaporanRenstraPage() {
       '2028': item.target_tahun_4,
       '2029': item.target_tahun_5,
       'Kondisi Akhir': item.kondisi_akhir,
-      'Target Renja': item.target_renja,
     }));
 
     // Create workbook and worksheet
@@ -297,7 +289,6 @@ function LaporanRenstraPage() {
       { wch: 15 },  // Satuan
       { wch: 8 },   // PK
       { wch: 8 },   // IKU
-      { wch: 30 },  // Cara Pengukuran
       { wch: 15 },  // Kondisi Awal
       { wch: 10 },  // 2025
       { wch: 10 },  // 2026
@@ -305,7 +296,6 @@ function LaporanRenstraPage() {
       { wch: 10 },  // 2028
       { wch: 10 },  // 2029
       { wch: 15 },  // Kondisi Akhir
-      { wch: 15 },  // Target Renja
     ];
     ws['!cols'] = colWidths;
 
@@ -368,7 +358,6 @@ function LaporanRenstraPage() {
       item.satuan,
       item.pk ? 'Ya' : 'Tidak',
       item.iku ? 'Ya' : 'Tidak',
-      item.cara_pengukuran,
       item.kondisi_awal,
       item.target_tahun_1,
       item.target_tahun_2,
@@ -376,14 +365,13 @@ function LaporanRenstraPage() {
       item.target_tahun_4,
       item.target_tahun_5,
       item.kondisi_akhir,
-      item.target_renja,
     ]);
 
     const tableHeaders = [
       'No', 'PD', 'Tujuan', 'Sasaran', 'Kebijakan', 'Program', 
       'Kegiatan', 'Sub Kegiatan', 'Sasaran SK', 'Indikator', 
-      'Satuan', 'PK', 'IKU', 'Cara Ukur', 'K.Awal', 
-      '2025', '2026', '2027', '2028', '2029', 'K.Akhir', 'T.Renja'
+      'Satuan', 'PK', 'IKU', 'K.Awal', 
+      '2025', '2026', '2027', '2028', '2029', 'K.Akhir',
     ];
 
     // Add table using the correct method
@@ -418,7 +406,6 @@ function LaporanRenstraPage() {
         18: { halign: 'center', cellWidth: 10 },  // 2028
         19: { halign: 'center', cellWidth: 10 },  // 2029
         20: { halign: 'center', cellWidth: 12 },  // Kondisi Akhir
-        21: { halign: 'center', cellWidth: 12 },  // Target Renja
       },
       margin: { top: 40, left: 10, right: 10 },
       didDrawPage: (data) => {
@@ -504,7 +491,7 @@ function LaporanRenstraPage() {
                   <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Satuan</th>
                   <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">PK</th>
                   <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">IKU</th>
-                  <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Cara Pengukuran</th>
+                  {/* <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Cara Pengukuran</th> */}
                   <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">Kondisi Awal</th>
                   <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">2025</th>
                   <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">2026</th>
@@ -512,7 +499,7 @@ function LaporanRenstraPage() {
                   <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">2028</th>
                   <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">2029</th>
                   <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">Kondisi Akhir</th>
-                  <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">Target Renja</th>
+                  {/* <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">Target Renja</th> */}
                 </tr>
               </thead>
               <tbody>
@@ -532,7 +519,7 @@ function LaporanRenstraPage() {
                       <td className="py-2 px-2 border border-gray-300">{item.satuan}</td>
                       <td className="py-2 px-2 border border-gray-300 text-center">{item.pk ? '✓' : '-'}</td>
                       <td className="py-2 px-2 border border-gray-300 text-center">{item.iku ? '✓' : '-'}</td>
-                      <td className="py-2 px-2 border border-gray-300">{item.cara_pengukuran}</td>
+                      {/* <td className="py-2 px-2 border border-gray-300">{item.cara_pengukuran}</td> */}
                       <td className="py-2 px-2 border border-gray-300 text-center">{item.kondisi_awal}</td>
                       <td className="py-2 px-2 border border-gray-300 text-center">{item.target_tahun_1}</td>
                       <td className="py-2 px-2 border border-gray-300 text-center">{item.target_tahun_2}</td>
@@ -540,7 +527,7 @@ function LaporanRenstraPage() {
                       <td className="py-2 px-2 border border-gray-300 text-center">{item.target_tahun_4}</td>
                       <td className="py-2 px-2 border border-gray-300 text-center">{item.target_tahun_5}</td>
                       <td className="py-2 px-2 border border-gray-300 text-center">{item.kondisi_akhir}</td>
-                      <td className="py-2 px-2 border border-gray-300 text-center">{item.target_renja}</td>
+                      {/* <td className="py-2 px-2 border border-gray-300 text-center">{item.target_renja}</td> */}
                     </tr>
                   ))
                 ) : (

@@ -39,7 +39,6 @@ function EditSubKegiatanPage() {
           tahun3: subKegiatanData.anggaran_tahun_3,
           tahun4: subKegiatanData.anggaran_tahun_4,
           tahun5: subKegiatanData.anggaran_tahun_5,
-          renja: subKegiatanData.anggaran_renja,
         });
       }
       
@@ -67,7 +66,6 @@ function EditSubKegiatanPage() {
         kegiatan_id: selectedKegiatanId,
         deskripsi_sub_kegiatan: deskripsiSubKegiatan,
         sumber_anggaran: sumberAnggaran,
-        anggaran_renja: anggaran.renja,
         anggaran_tahun_1: anggaran.tahun1,
         anggaran_tahun_2: anggaran.tahun2,
         anggaran_tahun_3: anggaran.tahun3,
@@ -118,7 +116,7 @@ function EditSubKegiatanPage() {
                 <input type="number" name="tahun3" placeholder="Anggaran 2027" value={anggaran.tahun3 || ''} onChange={handleAnggaranChange} required className="border p-2 rounded-md" />
                 <input type="number" name="tahun4" placeholder="Anggaran 2028" value={anggaran.tahun4 || ''} onChange={handleAnggaranChange} required className="border p-2 rounded-md" />
                 <input type="number" name="tahun5" placeholder="Anggaran 2029" value={anggaran.tahun5 || ''} onChange={handleAnggaranChange} required className="border p-2 rounded-md" />
-                <input type="number" name="renja" placeholder="Anggaran Renja" value={anggaran.renja || ''} onChange={handleAnggaranChange} required className="border p-2 rounded-md" />
+                {/* <input type="number" name="renja" placeholder="Anggaran Renja" value={anggaran.renja || ''} onChange={handleAnggaranChange} required className="border p-2 rounded-md" /> */}
             </div>
         </div>
 

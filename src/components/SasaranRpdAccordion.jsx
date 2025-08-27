@@ -36,7 +36,7 @@ function SasaranRpdAccordion({ sasaran, onDataChange }) {
         <div className="w-full bg-blue-600 text-white p-3 flex justify-between items-center rounded-t-lg">
           <span className="font-semibold text-left">» {sasaran.deskripsi}</span>
           <div className="flex items-center space-x-2">
-              <Link to={`/rpd/sasaran/edit/${sasaran.id}`} className="bg-yellow-500 hover:bg-yellow-600 text-white p-2 rounded"><FaEdit /></Link>
+              {/* <Link to={`/rpd/sasaran/edit/${sasaran.id}`} className="bg-yellow-500 hover:bg-yellow-600 text-white p-2 rounded"><FaEdit /></Link> */}
               <button onClick={handleDelete} className="bg-red-500 hover:bg-red-600 text-white p-2 rounded"><FaTrash /></button>
               <button onClick={() => setIsOpen(!isOpen)} className="p-2">
                 <FaChevronDown className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />

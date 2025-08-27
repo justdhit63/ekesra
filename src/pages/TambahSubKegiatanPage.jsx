@@ -14,7 +14,7 @@ function TambahSubKegiatanPage() {
   const [deskripsiSubKegiatan, setDeskripsiSubKegiatan] = useState('');
   const [sumberAnggaran, setSumberAnggaran] = useState('');
   const [anggaran, setAnggaran] = useState({
-    tahun1: 0, tahun2: 0, tahun3: 0, tahun4: 0, tahun5: 0, renja: 0
+    tahun1: 0, tahun2: 0, tahun3: 0, tahun4: 0, tahun5: 0,
   });
 
   const [saving, setSaving] = useState(false);
@@ -60,7 +60,6 @@ function TambahSubKegiatanPage() {
         kegiatan_id: selectedKegiatanId,
         deskripsi_sub_kegiatan: deskripsiSubKegiatan,
         sumber_anggaran: sumberAnggaran,
-        anggaran_renja: anggaran.renja,
         anggaran_tahun_1: anggaran.tahun1,
         anggaran_tahun_2: anggaran.tahun2,
         anggaran_tahun_3: anggaran.tahun3,
@@ -117,7 +116,7 @@ function TambahSubKegiatanPage() {
                 <input type="number" name="tahun3" placeholder="Anggaran 2027" value={anggaran.tahun3} onChange={handleAnggaranChange} required className="border p-2 rounded-md" />
                 <input type="number" name="tahun4" placeholder="Anggaran 2028" value={anggaran.tahun4} onChange={handleAnggaranChange} required className="border p-2 rounded-md" />
                 <input type="number" name="tahun5" placeholder="Anggaran 2029" value={anggaran.tahun5} onChange={handleAnggaranChange} required className="border p-2 rounded-md" />
-                <input type="number" name="renja" placeholder="Anggaran Renja" value={anggaran.renja} onChange={handleAnggaranChange} required className="border p-2 rounded-md" />
+                {/* <input type="number" name="renja" placeholder="Anggaran Renja" value={anggaran.renja} onChange={handleAnggaranChange} required className="border p-2 rounded-md" /> */}
             </div>
         </div>
 

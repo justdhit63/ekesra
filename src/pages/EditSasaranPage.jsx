@@ -9,7 +9,6 @@ const initialIndicatorState = {
   pk: false,
   iku: false,
   satuan: '',
-  cara_pengukuran: '',
   kondisi_awal: '',
   target_tahun_1: '',
   target_tahun_2: '',
@@ -187,7 +186,7 @@ function EditSasaranPage() {
                     <label className="flex items-center space-x-2 text-sm"><input type="checkbox" name="pk" checked={indicator.pk || false} onChange={e => handleIndicatorChange(index, e)} /><span>PK</span></label>
                     <label className="flex items-center space-x-2 text-sm"><input type="checkbox" name="iku" checked={indicator.iku || false} onChange={e => handleIndicatorChange(index, e)} /><span>IKU</span></label>
                 </div>
-                <input type="text" name="cara_pengukuran" placeholder="Cara Pengukuran *" value={indicator.cara_pengukuran || ''} onChange={e => handleIndicatorChange(index, e)} required className="border p-2 rounded-md" />
+                {/* <input type="text" name="cara_pengukuran" placeholder="Cara Pengukuran *" value={indicator.cara_pengukuran || ''} onChange={e => handleIndicatorChange(index, e)} required className="border p-2 rounded-md" /> */}
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mt-4">
                 <input type="text" name="kondisi_awal" placeholder="Kondisi Awal *" value={indicator.kondisi_awal || ''} onChange={e => handleIndicatorChange(index, e)} required className="border p-2 rounded-md" />

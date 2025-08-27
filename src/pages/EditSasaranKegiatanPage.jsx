@@ -9,7 +9,6 @@ const initialIndicatorState = {
   satuan: '',
   pk: false,
   iku: false,
-  cara_pengukuran: '',
   kondisi_awal: '',
   target_tahun_1: '',
   target_tahun_2: '',
@@ -166,10 +165,10 @@ function EditSasaranKegiatanPage() {
                   </div>
                 </div>
               </div>
-              <div className="mt-4">
+              {/* <div className="mt-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Cara Pengukuran</label>
                 <input type="text" name="cara_pengukuran" placeholder="Cara Pengukuran *" value={indicator.cara_pengukuran || ''} onChange={e => handleIndicatorChange(index, e)} required className="border p-2 rounded-md w-full" />
-              </div>
+              </div> */}
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mt-4">
                 <input type="text" name="kondisi_awal" placeholder="Kondisi Awal *" value={indicator.kondisi_awal || ''} onChange={e => handleIndicatorChange(index, e)} required className="border p-2 rounded-md" />
                 <input type="text" name="target_tahun_1" placeholder="Target 2025 *" value={indicator.target_tahun_1 || ''} onChange={e => handleIndicatorChange(index, e)} required className="border p-2 rounded-md" />
