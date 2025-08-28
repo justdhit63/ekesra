@@ -69,6 +69,16 @@ function Sidebar({ isOpen, toggle }) {
             </NavLink>
           </li>
           <li>
+            <NavLink
+              to="/pk"
+              style={({ isActive }) => isActive ? activeLinkStyle : undefined}
+              className="flex items-center p-3 my-1 rounded-md hover:bg-green-800 transition-colors"
+            >
+              <FaHome size={20} className={isOpen ? 'mr-3' : 'mx-auto'} />
+              {isOpen && <span>Perjanjian Kinerja</span>}
+            </NavLink>
+          </li>
+          <li>
             <button onClick={() => setIsRpdOpen(!isRpdOpen)} className="w-full flex justify-between items-center p-3 my-1 rounded-md hover:bg-green-800">
               <div className="flex items-center"><FaLandmark className="mr-3" />RPJMB</div>
               <FaChevronDown className={`transition-transform duration-200 ${isRpdOpen ? 'rotate-180' : ''}`} />

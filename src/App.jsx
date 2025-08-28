@@ -60,6 +60,8 @@ import PKTriwulanSasaranPage from './pages/PKTriwulanSasaranPage';
 import PKTriwulanProgramPage from './pages/PKTriwulanProgramPage';
 import PKTriwulanKegiatanPage from './pages/PKTriwulanKegiatanPage';
 import CRUDPenanggungJawabPage from './pages/CRUDPenanggungJawabPage';
+import LaporanIndividuPage from './pages/LaporanIndividuPage';
+import WelcomePage from './pages/WelcomePage';
 
 // Buat halaman placeholder untuk contoh
 const LaporanPage = () => <div><h1>Halaman Laporan</h1></div>;
@@ -87,7 +89,7 @@ function App() {
       //   navigate('/');
       // }
       if (_event === 'SIGNED_OUT') {
-        navigate('/login');
+        navigate('/welcome');
       }
     });
 
@@ -100,6 +102,7 @@ function App() {
 
   return (
     <Routes>
+      <Route path="/welcome" element={<WelcomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignUpPage />} />
 
@@ -454,6 +457,14 @@ function App() {
         element={
           <ProtectedRoute session={session}>
             <Layout><PJSubKegiatanPage /></Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pk"
+        element={
+          <ProtectedRoute session={session}>
+            <Layout><LaporanIndividuPage /></Layout>
           </ProtectedRoute>
         }
       />

@@ -370,6 +370,7 @@ function LaporanRenstraPage() {
   }));
 
   // Export to Excel function
+  // Update bagian exportToExcel untuk menyesuaikan dengan data yang benar
   const exportToExcel = () => {
     if (flattenedData.length === 0) {
       alert('Tidak ada data untuk diekspor');
@@ -378,13 +379,14 @@ function LaporanRenstraPage() {
 
     // Prepare data for Excel
     const excelData = flattenedData.map((item, index) => ({
-      'No': index + 1,
+      'No': item.no,
+      'Level': item.level,
       'Perangkat Daerah': item.nama_perangkat_daerah,
       'Renstra Tujuan': item.renstra_tujuan,
       'Renstra Sasaran': item.renstra_sasaran,
-      'Renstra Kebijakan': item.renstra_kebijakan,
       'Renstra Program': item.renstra_program,
       'Renstra Kegiatan': item.renstra_kegiatan,
+      'Sasaran Kegiatan': item.sasaran_kegiatan,
       'Renstra Sub Kegiatan': item.renstra_sub_kegiatan,
       'Sasaran Sub Kegiatan': item.sasaran_sub_kegiatan,
       'Indikator': item.deskripsi_indikator,
@@ -398,21 +400,23 @@ function LaporanRenstraPage() {
       '2028': item.target_tahun_4,
       '2029': item.target_tahun_5,
       'Kondisi Akhir': item.kondisi_akhir,
+      'Target Renja': item.target_renja,
     }));
 
     // Create workbook and worksheet
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(excelData);
 
-    // Set column widths
+    // Set column widths - update untuk kolom tambahan
     const colWidths = [
       { wch: 5 },   // No
+      { wch: 15 },  // Level
       { wch: 25 },  // Perangkat Daerah
       { wch: 30 },  // Renstra Tujuan
       { wch: 30 },  // Renstra Sasaran
-      { wch: 30 },  // Renstra Kebijakan
       { wch: 30 },  // Renstra Program
       { wch: 30 },  // Renstra Kegiatan
+      { wch: 25 },  // Sasaran Kegiatan
       { wch: 30 },  // Renstra Sub Kegiatan
       { wch: 30 },  // Sasaran Sub Kegiatan
       { wch: 40 },  // Indikator
@@ -426,16 +430,17 @@ function LaporanRenstraPage() {
       { wch: 10 },  // 2028
       { wch: 10 },  // 2029
       { wch: 15 },  // Kondisi Akhir
+      { wch: 15 },  // Target Renja
     ];
     ws['!cols'] = colWidths;
 
     // Add worksheet to workbook
-    XLSX.utils.book_append_sheet(wb, ws, 'Laporan Renstra');
+    XLSX.utils.book_append_sheet(wb, ws, 'Laporan Renstra Lengkap');
 
     // Generate filename
     const selectedPdName = selectedDaerahId === 'all' ? 'Semua_PD' :
       perangkatDaerahList.find(pd => pd.id === selectedDaerahId)?.nama_daerah?.replace(/\s+/g, '_') || 'Unknown';
-    const filename = `Laporan_Renstra_${selectedPdName}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    const filename = `Laporan_Renstra_Lengkap_${selectedPdName}_${new Date().toISOString().split('T')[0]}.xlsx`;
 
     // Save file
     XLSX.writeFile(wb, filename);
@@ -476,12 +481,13 @@ function LaporanRenstraPage() {
     // Prepare table data
     const tableData = flattenedData.map((item, index) => [
       index + 1,
+      item.level,
       item.nama_perangkat_daerah,
       item.renstra_tujuan,
       item.renstra_sasaran,
-      item.renstra_kebijakan,
       item.renstra_program,
       item.renstra_kegiatan,
+      item.sasaran_kegiatan,
       item.renstra_sub_kegiatan,
       item.sasaran_sub_kegiatan,
       item.deskripsi_indikator,
@@ -495,13 +501,14 @@ function LaporanRenstraPage() {
       item.target_tahun_4,
       item.target_tahun_5,
       item.kondisi_akhir,
+      item.target_renja,
     ]);
 
     const tableHeaders = [
-      'No', 'PD', 'Tujuan', 'Sasaran', 'Kebijakan', 'Program',
-      'Kegiatan', 'Sub Kegiatan', 'Sasaran SK', 'Indikator',
+      'No', 'Level', 'PD', 'Tujuan', 'Sasaran', 'Program',
+      'Kegiatan', 'Sasaran Keg.', 'Sub Kegiatan', 'Sasaran SK', 'Indikator',
       'Satuan', 'PK', 'IKU', 'K.Awal',
-      '2025', '2026', '2027', '2028', '2029', 'K.Akhir',
+      '2025', '2026', '2027', '2028', '2029', 'K.Akhir', 'T.Renja'
     ];
 
     // Add table using the correct method
@@ -511,8 +518,8 @@ function LaporanRenstraPage() {
       startY: 40,
       theme: 'striped',
       styles: {
-        fontSize: 6,
-        cellPadding: 2,
+        fontSize: 5,
+        cellPadding: 1,
         overflow: 'linebreak',
         halign: 'left',
         valign: 'top'
@@ -520,24 +527,26 @@ function LaporanRenstraPage() {
       headStyles: {
         fillColor: [66, 139, 202],
         textColor: 255,
-        fontSize: 7,
+        fontSize: 6,
         fontStyle: 'bold',
         halign: 'center'
       },
       columnStyles: {
-        0: { halign: 'center', cellWidth: 8 },   // No
-        10: { cellWidth: 12 },                    // Satuan
-        11: { halign: 'center', cellWidth: 8 },   // PK
-        12: { halign: 'center', cellWidth: 8 },   // IKU
-        14: { halign: 'center', cellWidth: 12 },  // Kondisi Awal
-        15: { halign: 'center', cellWidth: 10 },  // 2025
-        16: { halign: 'center', cellWidth: 10 },  // 2026
-        17: { halign: 'center', cellWidth: 10 },  // 2027
-        18: { halign: 'center', cellWidth: 10 },  // 2028
-        19: { halign: 'center', cellWidth: 10 },  // 2029
-        20: { halign: 'center', cellWidth: 12 },  // Kondisi Akhir
+        0: { halign: 'center', cellWidth: 6 },    // No
+        1: { halign: 'center', cellWidth: 12 },   // Level
+        11: { cellWidth: 10 },                    // Satuan
+        12: { halign: 'center', cellWidth: 6 },   // PK
+        13: { halign: 'center', cellWidth: 6 },   // IKU
+        14: { halign: 'center', cellWidth: 10 },  // Kondisi Awal
+        15: { halign: 'center', cellWidth: 8 },   // 2025
+        16: { halign: 'center', cellWidth: 8 },   // 2026
+        17: { halign: 'center', cellWidth: 8 },   // 2027
+        18: { halign: 'center', cellWidth: 8 },   // 2028
+        19: { halign: 'center', cellWidth: 8 },   // 2029
+        20: { halign: 'center', cellWidth: 10 },  // Kondisi Akhir
+        21: { halign: 'center', cellWidth: 10 },  // Target Renja
       },
-      margin: { top: 40, left: 10, right: 10 },
+      margin: { top: 40, left: 5, right: 5 },
       didDrawPage: (data) => {
         // Add page number
         const pageCount = doc.internal.getNumberOfPages();
@@ -639,10 +648,10 @@ function LaporanRenstraPage() {
                       <td className="py-2 px-2 border border-gray-300 text-center">{item.no}</td>
                       <td className="py-2 px-2 border border-gray-300">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.level === 'Tujuan' ? 'bg-blue-100 text-blue-800' :
-                            item.level === 'Sasaran' ? 'bg-green-100 text-green-800' :
-                              item.level === 'Program' ? 'bg-yellow-100 text-yellow-800' :
-                                item.level === 'Kegiatan' ? 'bg-purple-100 text-purple-800' :
-                                  'bg-red-100 text-red-800'
+                          item.level === 'Sasaran' ? 'bg-green-100 text-green-800' :
+                            item.level === 'Program' ? 'bg-yellow-100 text-yellow-800' :
+                              item.level === 'Kegiatan' ? 'bg-purple-100 text-purple-800' :
+                                'bg-red-100 text-red-800'
                           }`}>
                           {item.level}
                         </span>

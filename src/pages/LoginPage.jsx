@@ -40,9 +40,9 @@ function LoginPage() {
         <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
             {/* Container form */}
             <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8">
-                <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
+                <Link to={`/welcome`} className="text-2xl font-bold text-center text-gray-800 mx-auto w-full mb-6 inline-flex items-center justify-center">
                     Login e-Kesra
-                </h2>
+                </Link>
 
                 {/* Tampilkan pesan error jika ada */}
                 {message && <p className="text-center text-red-500 bg-red-100 p-3 rounded-md mb-4">{message}</p>}
