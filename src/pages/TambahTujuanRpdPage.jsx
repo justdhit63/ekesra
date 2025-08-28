@@ -19,7 +19,7 @@ function TambahTujuanRpdPage() {
 
 return (
     <div className="mx-auto p-6 bg-white shadow-md rounded-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Form Tambah Tujuan RPD</h1>
+        <h1 className="text-2xl font-bold mb-6 text-center">Form Tambah Tujuan RPJMB</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Deskripsi</label>

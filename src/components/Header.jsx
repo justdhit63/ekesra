@@ -5,34 +5,41 @@ import { FaUserCircle, FaSignOutAlt, FaUserEdit } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
 function Header() {
-  const [profile, setProfile] = useState(null);
+  const [session, setSession] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const getSession = async () => {
       // Ambil sesi pengguna yang sedang aktif
       const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        // Ambil data dari tabel profiles
-        const { data: profileData, error } = await supabase
-          .from('profiles')
-          .select('full_name')
-          .eq('id', session.user.id)
-          .single();
-        
-        if (profileData) {
-          setProfile(profileData);
-        } else if (error) {
-          console.error("Gagal mengambil profil:", error);
-        }
-      }
+      setSession(session);
     };
-    fetchProfile();
+    
+    getSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleLogout = () => {
     supabase.auth.signOut();
+  };
+
+  // Get user display name from session
+  const getDisplayName = () => {
+    if (!session?.user) return 'Memuat...';
+    
+    // Try to get full name from user metadata first
+    if (session.user.user_metadata?.full_name) {
+      return session.user.user_metadata.full_name;
+    }
+    
+    // Fallback to email
+    return session.user.email || 'Pengguna';
   };
 
   return (
@@ -43,7 +50,7 @@ function Header() {
       {/* Sisi Kanan Header */}
       <div className="flex items-center space-x-4 relative">
         <span className="text-gray-700 font-medium hidden sm:block">
-          {profile ? profile.full_name : 'Memuat...'}
+          {getDisplayName()}
         </span>
         
         {/* Ikon Profil dengan Dropdown */}

@@ -31,19 +31,19 @@ function TambahSasaranRpdPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-800 mb-4">Form Tambah Sasaran RPD</h1>
+      <h1 className="text-2xl font-bold text-gray-800 mb-4">Form Tambah Sasaran RPJMB</h1>
       <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Tujuan RPD (Induk)</label>
+          <label className="block text-sm font-medium text-gray-700">Tujuan RPJMB (Induk)</label>
           <select value={selectedTujuanId} onChange={e => setSelectedTujuanId(e.target.value)} required className="mt-1 block w-full border p-2 rounded-md">
-            <option value="">Pilih Tujuan RPD</option>
+            <option value="">Pilih Tujuan RPJMB</option>
             {tujuanList.map(tujuan => (
               <option key={tujuan.id} value={tujuan.id}>{tujuan.deskripsi}</option>
             ))}
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">Deskripsi Sasaran RPD</label>
+          <label className="block text-sm font-medium text-gray-700">Deskripsi Sasaran RPJMB</label>
           <textarea value={deskripsi} onChange={e => setDeskripsi(e.target.value)} required className="mt-1 block w-full border p-2 rounded-md" rows="4"></textarea>
         </div>
         <div className="flex justify-end space-x-4">

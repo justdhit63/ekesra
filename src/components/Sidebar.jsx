@@ -50,6 +50,16 @@ function Sidebar({ isOpen, toggle }) {
           <div className="border border-green-800 w-3/4 mx-auto my-4"></div>
           <li>
             <NavLink
+              to="/penanggung-jawab"
+              style={({ isActive }) => isActive ? activeLinkStyle : undefined}
+              className="flex items-center p-3 my-1 rounded-md hover:bg-green-800 transition-colors"
+            >
+              <FaHome size={20} className={isOpen ? 'mr-3' : 'mx-auto'} />
+              {isOpen && <span>Penanggung Jawab</span>}
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
               to="/tambah-perangkat-daerah"
               style={({ isActive }) => isActive ? activeLinkStyle : undefined}
               className="flex items-center p-3 my-1 rounded-md hover:bg-green-800 transition-colors"
@@ -60,13 +70,13 @@ function Sidebar({ isOpen, toggle }) {
           </li>
           <li>
             <button onClick={() => setIsRpdOpen(!isRpdOpen)} className="w-full flex justify-between items-center p-3 my-1 rounded-md hover:bg-green-800">
-              <div className="flex items-center"><FaLandmark className="mr-3" />RPD</div>
+              <div className="flex items-center"><FaLandmark className="mr-3" />RPJMB</div>
               <FaChevronDown className={`transition-transform duration-200 ${isRpdOpen ? 'rotate-180' : ''}`} />
             </button>
             {isRpdOpen && (
               <ul className="pl-4 py-1">
-                <li><NavLink to="/rpd/tujuan" className="block p-2 rounded-md hover:bg-green-800 text-sm">Tujuan RPD</NavLink></li>
-                <li><NavLink to="/rpd/sasaran" className="block p-2 rounded-md hover:bg-green-800 text-sm">Sasaran RPD</NavLink></li>
+                <li><NavLink to="/rpd/tujuan" className="block p-2 rounded-md hover:bg-green-800 text-sm">Tujuan RPJMB</NavLink></li>
+                <li><NavLink to="/rpd/sasaran" className="block p-2 rounded-md hover:bg-green-800 text-sm">Sasaran RPJMB</NavLink></li>
               </ul>
             )}
           </li>

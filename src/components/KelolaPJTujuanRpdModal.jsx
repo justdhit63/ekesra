@@ -14,7 +14,7 @@ function KelolaPJTujuanRpdModal({ isOpen, onClose, indicator, onSave }) {
     
     // Ambil semua pegawai (kecuali admin) untuk pilihan dropdown
     const fetchProfiles = async () => {
-      const { data } = await supabase.from('profiles').select('id, full_name').neq('role', 'admin');
+      const { data } = await supabase.from('penanggung_jawab').select('id, nama');
       if (data) setAllProfiles(data);
     };
 
@@ -23,7 +23,7 @@ function KelolaPJTujuanRpdModal({ isOpen, onClose, indicator, onSave }) {
       setLoading(true);
       const { data } = await supabase
         .from('pj_indikator_tujuan_rpd')
-        .select('id, profile_id')
+        .select('id, penanggung_jawab_id')
         .eq('indikator_tujuan_rpd_id', indicator.id);
       
       if (data) setPicList(data);
@@ -37,7 +37,7 @@ function KelolaPJTujuanRpdModal({ isOpen, onClose, indicator, onSave }) {
   // Menambah baris baru HANYA di state lokal
   const handleAddPic = () => {
     if (allProfiles.length > 0) {
-      setPicList([...picList, { id: `new-${Date.now()}`, profile_id: allProfiles[0].id }]);
+      setPicList([...picList, { id: `new-${Date.now()}`, penanggung_jawab_id: allProfiles[0].id }]);
     }
   };
 
@@ -51,7 +51,7 @@ function KelolaPJTujuanRpdModal({ isOpen, onClose, indicator, onSave }) {
   // Mengubah pilihan penanggung jawab di state lokal
   const handlePicChange = (index, newProfileId) => {
     const values = [...picList];
-    values[index].profile_id = newProfileId;
+    values[index].penanggung_jawab_id = newProfileId;
     setPicList(values);
   };
 
@@ -65,10 +65,10 @@ function KelolaPJTujuanRpdModal({ isOpen, onClose, indicator, onSave }) {
     
     // 2. Siapkan data baru dari state untuk disimpan
     const newPicData = picList
-      .filter(pic => pic.profile_id)
+      .filter(pic => pic.penanggung_jawab_id)
       .map(pic => ({
         indikator_tujuan_rpd_id: indicator.id,
-        profile_id: pic.profile_id,
+        penanggung_jawab_id: pic.penanggung_jawab_id,
       }));
 
     // 3. Masukkan data baru jika ada
@@ -101,11 +101,11 @@ function KelolaPJTujuanRpdModal({ isOpen, onClose, indicator, onSave }) {
                 {loading ? <p>Memuat...</p> : picList.map((pic, index) => (
                     <div key={pic.id || index} className="flex items-center space-x-2">
                         <select 
-                          value={pic.profile_id} 
+                          value={pic.penanggung_jawab_id} 
                           onChange={(e) => handlePicChange(index, e.target.value)} 
                           className="flex-grow border p-2 rounded-md"
                         >
-                            {allProfiles.map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
+                            {allProfiles.map(p => <option key={p.id} value={p.id}>{p.nama}</option>)}
                         </select>
                         <button type="button" onClick={() => handleDeletePic(index)} className="text-red-500 hover:text-red-700 p-2 rounded-md bg-red-50 hover:bg-red-100">
                           <FaTrash />

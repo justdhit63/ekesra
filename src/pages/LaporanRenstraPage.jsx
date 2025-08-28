@@ -62,35 +62,32 @@ function LaporanRenstraPage() {
   //   }
   // };
 
-  // Fetch complete hierarchical data tanpa relasi ke RPD
+  // Ganti function fetchCompleteReportData dengan yang ini
   const fetchCompleteReportData = async (pdId) => {
     try {
+      // Query untuk mengambil semua level data sekaligus
       const { data, error } = await supabase
-        .from('renstra_sasaran_sub_kegiatan')
+        .from('renstra_tujuan')
         .select(`
+        id,
+        deskripsi_tujuan,
+        perangkat_daerah_id,
+        renstra_indikator (
           id,
-          deskripsi_sasaran_sub_kegiatan,
-          renstra_sub_kegiatan!inner (
-            id,
-            deskripsi_sub_kegiatan,
-            renstra_kegiatan!inner (
-              id,
-              deskripsi_kegiatan,
-              renstra_program!inner (
-                id,
-                deskripsi_program,
-                renstra_sasaran!inner (
-                  id,
-                  deskripsi_sasaran,
-                  renstra_tujuan!inner (
-                    id,
-                    deskripsi_tujuan
-                  )
-                )
-              )
-            )
-          ),
-          renstra_indikator_sub_kegiatan (
+          deskripsi_indikator,
+          satuan,
+          kondisi_awal,
+          target_tahun_1,
+          target_tahun_2,
+          target_tahun_3,
+          target_tahun_4,
+          target_tahun_5,
+          kondisi_akhir
+        ),
+        renstra_sasaran (
+          id,
+          deskripsi_sasaran,
+          renstra_indikator_sasaran (
             id,
             deskripsi_indikator,
             satuan,
@@ -103,26 +100,203 @@ function LaporanRenstraPage() {
             target_tahun_4,
             target_tahun_5,
             kondisi_akhir
+          ),
+          renstra_program (
+            id,
+            deskripsi_program,
+            renstra_sasaran_program(
+              id,
+              deskripsi_sasaran_program,
+              renstra_indikator_sasaran_program (
+                id,
+                deskripsi_indikator,
+                satuan,
+                pk,
+                ir,
+                target_tahun_1,
+                target_tahun_2,
+                target_tahun_3,
+                target_tahun_4,
+                target_tahun_5
+              )
+            ),
+            renstra_kegiatan (
+              id,
+              deskripsi_kegiatan,
+              renstra_sasaran_kegiatan (
+                id,
+                deskripsi_sasaran_kegiatan,
+                renstra_indikator_kegiatan (
+                  id,
+                  deskripsi_indikator,
+                  satuan,
+                  pk,
+                  iku,
+                  kondisi_awal,
+                  target_tahun_1,
+                  target_tahun_2,
+                  target_tahun_3,
+                  target_tahun_4,
+                  target_tahun_5,
+                  kondisi_akhir,
+                  target_renja
+                )
+              ),
+              renstra_sub_kegiatan (
+                id,
+                deskripsi_sub_kegiatan,
+                renstra_sasaran_sub_kegiatan (
+                  id,
+                  deskripsi_sasaran_sub_kegiatan,
+                  renstra_indikator_sub_kegiatan (
+                    id,
+                    deskripsi_indikator,
+                    satuan,
+                    pk,
+                    iku,
+                    kondisi_awal,
+                    target_tahun_1,
+                    target_tahun_2,
+                    target_tahun_3,
+                    target_tahun_4,
+                    target_tahun_5,
+                    kondisi_akhir,
+                    target_renja
+                  )
+                )
+              )
+            )
           )
-        `);
+        )
+      `)
+        .eq('perangkat_daerah_id', pdId);
 
       if (error) throw error;
 
-      // Ambil data kebijakan untuk setiap sasaran
-      const dataWithKebijakan = await Promise.all(
-        (data || []).map(async (item) => {
-          const sasaranId = item.renstra_sub_kegiatan?.renstra_kegiatan?.renstra_program?.renstra_sasaran?.id;
-          const kebijakan = sasaranId ? await fetchKebijakanBySasaranId(sasaranId) : null;
+      // Transform data menjadi struktur yang flat untuk semua level indikator
+      const allIndicators = [];
 
-          return {
-            ...item,
-            kebijakan_data: kebijakan,
-            perangkat_daerah_id: pdId
-          };
-        })
-      );
+      (data || []).forEach(tujuan => {
+        // 1. Indikator dari Renstra Tujuan
+        if (tujuan.renstra_indikator && tujuan.renstra_indikator.length > 0) {
+          tujuan.renstra_indikator.forEach(indikator => {
+            allIndicators.push({
+              level: 'Tujuan',
+              perangkat_daerah_id: pdId,
+              renstra_tujuan: tujuan.deskripsi_tujuan,
+              renstra_sasaran: '-',
+              renstra_program: '-',
+              renstra_kegiatan: '-',
+              sasaran_kegiatan: '-',
+              renstra_sub_kegiatan: '-',
+              sasaran_sub_kegiatan: '-',
+              indikator: indikator
+            });
+          });
+        }
 
-      return dataWithKebijakan;
+        // 2. Indikator dari Renstra Sasaran
+        if (tujuan.renstra_sasaran) {
+          tujuan.renstra_sasaran.forEach(sasaran => {
+            if (sasaran.renstra_indikator_sasaran && sasaran.renstra_indikator_sasaran.length > 0) {
+              sasaran.renstra_indikator_sasaran.forEach(indikator => {
+                allIndicators.push({
+                  level: 'Sasaran',
+                  perangkat_daerah_id: pdId,
+                  renstra_tujuan: tujuan.deskripsi_tujuan,
+                  renstra_sasaran: sasaran.deskripsi_sasaran,
+                  renstra_program: '-',
+                  renstra_kegiatan: '-',
+                  sasaran_kegiatan: '-',
+                  renstra_sub_kegiatan: '-',
+                  sasaran_sub_kegiatan: '-',
+                  indikator: indikator
+                });
+              });
+            }
+
+            // 3. Indikator dari Renstra Program (Perbaiki nama tabel)
+            if (sasaran.renstra_program) {
+              sasaran.renstra_program.forEach(program => {
+                if (program.renstra_sasaran_program && program.renstra_sasaran_program.length > 0) {
+                  program.renstra_sasaran_program.forEach(indikator => {
+                    allIndicators.push({
+                      level: 'Program',
+                      perangkat_daerah_id: pdId,
+                      renstra_tujuan: tujuan.deskripsi_tujuan,
+                      renstra_sasaran: sasaran.deskripsi_sasaran,
+                      renstra_program: program.deskripsi_program,
+                      renstra_kegiatan: '-',
+                      sasaran_kegiatan: '-',
+                      renstra_sub_kegiatan: '-',
+                      sasaran_sub_kegiatan: '-',
+                      indikator: {
+                        ...indikator,
+                        kondisi_awal: '-',
+                        kondisi_akhir: '-'
+                      }
+                    });
+                  });
+                }
+
+                // 4. Indikator dari Renstra Kegiatan
+                if (program.renstra_kegiatan) {
+                  program.renstra_kegiatan.forEach(kegiatan => {
+                    if (kegiatan.renstra_sasaran_kegiatan) {
+                      kegiatan.renstra_sasaran_kegiatan.forEach(sasaranKegiatan => {
+                        if (sasaranKegiatan.renstra_indikator_kegiatan && sasaranKegiatan.renstra_indikator_kegiatan.length > 0) {
+                          sasaranKegiatan.renstra_indikator_kegiatan.forEach(indikator => {
+                            allIndicators.push({
+                              level: 'Kegiatan',
+                              perangkat_daerah_id: pdId,
+                              renstra_tujuan: tujuan.deskripsi_tujuan,
+                              renstra_sasaran: sasaran.deskripsi_sasaran,
+                              renstra_program: program.deskripsi_program,
+                              renstra_kegiatan: kegiatan.deskripsi_kegiatan,
+                              sasaran_kegiatan: sasaranKegiatan.deskripsi_sasaran_kegiatan,
+                              renstra_sub_kegiatan: '-',
+                              sasaran_sub_kegiatan: '-',
+                              indikator: indikator
+                            });
+                          });
+                        }
+                      });
+                    }
+
+                    // 5. Indikator dari Renstra Sub Kegiatan
+                    if (kegiatan.renstra_sub_kegiatan) {
+                      kegiatan.renstra_sub_kegiatan.forEach(subKegiatan => {
+                        if (subKegiatan.renstra_sasaran_sub_kegiatan) {
+                          subKegiatan.renstra_sasaran_sub_kegiatan.forEach(sasaranSubKegiatan => {
+                            if (sasaranSubKegiatan.renstra_indikator_sub_kegiatan && sasaranSubKegiatan.renstra_indikator_sub_kegiatan.length > 0) {
+                              sasaranSubKegiatan.renstra_indikator_sub_kegiatan.forEach(indikator => {
+                                allIndicators.push({
+                                  level: 'Sub Kegiatan',
+                                  perangkat_daerah_id: pdId,
+                                  renstra_tujuan: tujuan.deskripsi_tujuan,
+                                  renstra_sasaran: sasaran.deskripsi_sasaran,
+                                  renstra_program: program.deskripsi_program,
+                                  renstra_kegiatan: kegiatan.deskripsi_kegiatan,
+                                  sasaran_kegiatan: '-',
+                                  renstra_sub_kegiatan: subKegiatan.deskripsi_sub_kegiatan,
+                                  sasaran_sub_kegiatan: sasaranSubKegiatan.deskripsi_sasaran_sub_kegiatan,
+                                  indikator: indikator
+                                });
+                              });
+                            }
+                          });
+                        }
+                      });
+                    }
+                  });
+                }
+              });
+            }
+          });
+        }
+      });
+
+      return allIndicators;
     } catch (error) {
       console.error('Error fetching complete report data:', error);
       return [];
@@ -170,74 +344,30 @@ function LaporanRenstraPage() {
   }, [selectedDaerahId, perangkatDaerahList]);
 
   // Flatten data dengan struktur hierarki yang benar
-  const flattenedData = reportData.flatMap(sasaranSubKegiatan => {
-    // Cek apakah struktur data lengkap tersedia
-    const subKegiatan = sasaranSubKegiatan?.renstra_sub_kegiatan;
-    if (!subKegiatan) return [];
-
-    const kegiatan = subKegiatan?.renstra_kegiatan;
-    if (!kegiatan) return [];
-
-    const program = kegiatan?.renstra_program;
-    if (!program) return [];
-
-    const renstraSasaran = program?.renstra_sasaran;
-    if (!renstraSasaran) return [];
-
-    const renstraTujuan = renstraSasaran?.renstra_tujuan;
-    if (!renstraTujuan) return [];
-
-    // Ambil data kebijakan dari fetch terpisah
-    const kebijakan = sasaranSubKegiatan?.kebijakan_data;
-
-    // Jika ada indikator, map setiap indikator
-    if (sasaranSubKegiatan.renstra_indikator_sub_kegiatan && sasaranSubKegiatan.renstra_indikator_sub_kegiatan.length > 0) {
-      return sasaranSubKegiatan.renstra_indikator_sub_kegiatan.map(indikator => ({
-        nama_perangkat_daerah: sasaranSubKegiatan.nama_perangkat_daerah || '-',
-        renstra_tujuan: renstraTujuan.deskripsi_tujuan || '-',
-        renstra_sasaran: renstraSasaran.deskripsi_sasaran || '-',
-        renstra_kebijakan: kebijakan?.deskripsi_kebijakan || '-',
-        renstra_program: program.deskripsi_program || '-',
-        renstra_kegiatan: kegiatan.deskripsi_kegiatan || '-',
-        renstra_sub_kegiatan: subKegiatan.deskripsi_sub_kegiatan || '-',
-        sasaran_sub_kegiatan: sasaranSubKegiatan.deskripsi_sasaran_sub_kegiatan || '-',
-        deskripsi_indikator: indikator.deskripsi_indikator || '-',
-        satuan: indikator.satuan || '-',
-        pk: indikator.pk || false,
-        iku: indikator.iku || false,
-        kondisi_awal: indikator.kondisi_awal || '-',
-        target_tahun_1: indikator.target_tahun_1 || '-',
-        target_tahun_2: indikator.target_tahun_2 || '-',
-        target_tahun_3: indikator.target_tahun_3 || '-',
-        target_tahun_4: indikator.target_tahun_4 || '-',
-        target_tahun_5: indikator.target_tahun_5 || '-',
-        kondisi_akhir: indikator.kondisi_akhir || '-'
-      }));
-    } else {
-      // Jika tidak ada indikator, tetap tampilkan data hierarki dengan indikator kosong
-      return [{
-        nama_perangkat_daerah: sasaranSubKegiatan.nama_perangkat_daerah || '-',
-        renstra_tujuan: renstraTujuan.deskripsi_tujuan || '-',
-        renstra_sasaran: renstraSasaran.deskripsi_sasaran || '-',
-        renstra_kebijakan: kebijakan?.deskripsi_kebijakan || '-',
-        renstra_program: program.deskripsi_program || '-',
-        renstra_kegiatan: kegiatan.deskripsi_kegiatan || '-',
-        renstra_sub_kegiatan: subKegiatan.deskripsi_sub_kegiatan || '-',
-        sasaran_sub_kegiatan: sasaranSubKegiatan.deskripsi_sasaran_sub_kegiatan || '-',
-        deskripsi_indikator: '-',
-        satuan: '-',
-        pk: false,
-        iku: false,
-        kondisi_awal: '-',
-        target_tahun_1: '-',
-        target_tahun_2: '-',
-        target_tahun_3: '-',
-        target_tahun_4: '-',
-        target_tahun_5: '-',
-        kondisi_akhir: '-',
-      }];
-    }
-  });
+  const flattenedData = reportData.map((item, index) => ({
+    no: index + 1,
+    level: item.level,
+    nama_perangkat_daerah: item.nama_perangkat_daerah || '-',
+    renstra_tujuan: item.renstra_tujuan || '-',
+    renstra_sasaran: item.renstra_sasaran || '-',
+    renstra_program: item.renstra_program || '-',
+    renstra_kegiatan: item.renstra_kegiatan || '-',
+    sasaran_kegiatan: item.sasaran_kegiatan || '-',
+    renstra_sub_kegiatan: item.renstra_sub_kegiatan || '-',
+    sasaran_sub_kegiatan: item.sasaran_sub_kegiatan || '-',
+    deskripsi_indikator: item.indikator?.deskripsi_indikator || '-',
+    satuan: item.indikator?.satuan || '-',
+    pk: item.indikator?.pk || false,
+    iku: item.indikator?.iku || false,
+    kondisi_awal: item.indikator?.kondisi_awal || '-',
+    target_tahun_1: item.indikator?.target_tahun_1 || '-',
+    target_tahun_2: item.indikator?.target_tahun_2 || '-',
+    target_tahun_3: item.indikator?.target_tahun_3 || '-',
+    target_tahun_4: item.indikator?.target_tahun_4 || '-',
+    target_tahun_5: item.indikator?.target_tahun_5 || '-',
+    kondisi_akhir: item.indikator?.kondisi_akhir || '-',
+    target_renja: item.indikator?.target_renja || '-'
+  }));
 
   // Export to Excel function
   const exportToExcel = () => {
@@ -303,7 +433,7 @@ function LaporanRenstraPage() {
     XLSX.utils.book_append_sheet(wb, ws, 'Laporan Renstra');
 
     // Generate filename
-    const selectedPdName = selectedDaerahId === 'all' ? 'Semua_PD' : 
+    const selectedPdName = selectedDaerahId === 'all' ? 'Semua_PD' :
       perangkatDaerahList.find(pd => pd.id === selectedDaerahId)?.nama_daerah?.replace(/\s+/g, '_') || 'Unknown';
     const filename = `Laporan_Renstra_${selectedPdName}_${new Date().toISOString().split('T')[0]}.xlsx`;
 
@@ -336,7 +466,7 @@ function LaporanRenstraPage() {
     // Add subtitle with selected PD
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
-    const selectedPdName = selectedDaerahId === 'all' ? 'Semua Perangkat Daerah' : 
+    const selectedPdName = selectedDaerahId === 'all' ? 'Semua Perangkat Daerah' :
       perangkatDaerahList.find(pd => pd.id === selectedDaerahId)?.nama_daerah || 'Unknown';
     const subtitle = `Perangkat Daerah: ${selectedPdName}`;
     const subtitleWidth = doc.getTextWidth(subtitle);
@@ -368,9 +498,9 @@ function LaporanRenstraPage() {
     ]);
 
     const tableHeaders = [
-      'No', 'PD', 'Tujuan', 'Sasaran', 'Kebijakan', 'Program', 
-      'Kegiatan', 'Sub Kegiatan', 'Sasaran SK', 'Indikator', 
-      'Satuan', 'PK', 'IKU', 'K.Awal', 
+      'No', 'PD', 'Tujuan', 'Sasaran', 'Kebijakan', 'Program',
+      'Kegiatan', 'Sub Kegiatan', 'Sasaran SK', 'Indikator',
+      'Satuan', 'PK', 'IKU', 'K.Awal',
       '2025', '2026', '2027', '2028', '2029', 'K.Akhir',
     ];
 
@@ -419,7 +549,7 @@ function LaporanRenstraPage() {
 
     // Generate filename
     const filename = `Laporan_Renstra_${selectedPdName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
-    
+
     // Save PDF
     doc.save(filename);
   };
@@ -430,7 +560,7 @@ function LaporanRenstraPage() {
 
       <div className="bg-white p-6 rounded-lg shadow-md mb-6">
         <div className="mb-4 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-        <div className="w-full md:w-1/3">
+          <div className="w-full md:w-1/3">
             <label className="block text-sm font-medium text-gray-700">Perangkat Daerah</label>
             <select
               value={selectedDaerahId}
@@ -457,7 +587,7 @@ function LaporanRenstraPage() {
                 </svg>
                 Excel
               </button>
-              
+
               <button
                 onClick={exportToPDF}
                 className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors duration-200 flex items-center gap-2"
@@ -479,19 +609,19 @@ function LaporanRenstraPage() {
               <thead className="bg-gray-100">
                 <tr>
                   <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">No</th>
+                  <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Level</th>
                   <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Perangkat Daerah</th>
                   <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Renstra Tujuan</th>
                   <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Renstra Sasaran</th>
-                  <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Renstra Kebijakan</th>
                   <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Renstra Program</th>
                   <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Renstra Kegiatan</th>
+                  <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Sasaran Kegiatan</th>
                   <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Renstra Sub Kegiatan</th>
                   <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Sasaran Sub Kegiatan</th>
                   <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Indikator</th>
                   <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Satuan</th>
                   <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">PK</th>
                   <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">IKU</th>
-                  {/* <th className="py-2 px-2 border border-gray-300 text-left font-semibold text-gray-600">Cara Pengukuran</th> */}
                   <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">Kondisi Awal</th>
                   <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">2025</th>
                   <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">2026</th>
@@ -499,27 +629,36 @@ function LaporanRenstraPage() {
                   <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">2028</th>
                   <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">2029</th>
                   <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">Kondisi Akhir</th>
-                  {/* <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">Target Renja</th> */}
+                  <th className="py-2 px-2 border border-gray-300 text-center font-semibold text-gray-600">Target Renja</th>
                 </tr>
               </thead>
               <tbody>
                 {flattenedData.length > 0 ? (
                   flattenedData.map((item, index) => (
                     <tr key={index} className="hover:bg-gray-50">
-                      <td className="py-2 px-2 border border-gray-300 text-center">{index + 1}</td>
+                      <td className="py-2 px-2 border border-gray-300 text-center">{item.no}</td>
+                      <td className="py-2 px-2 border border-gray-300">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.level === 'Tujuan' ? 'bg-blue-100 text-blue-800' :
+                            item.level === 'Sasaran' ? 'bg-green-100 text-green-800' :
+                              item.level === 'Program' ? 'bg-yellow-100 text-yellow-800' :
+                                item.level === 'Kegiatan' ? 'bg-purple-100 text-purple-800' :
+                                  'bg-red-100 text-red-800'
+                          }`}>
+                          {item.level}
+                        </span>
+                      </td>
                       <td className="py-2 px-2 border border-gray-300">{item.nama_perangkat_daerah}</td>
                       <td className="py-2 px-2 border border-gray-300">{item.renstra_tujuan}</td>
                       <td className="py-2 px-2 border border-gray-300">{item.renstra_sasaran}</td>
-                      <td className="py-2 px-2 border border-gray-300">{item.renstra_kebijakan}</td>
                       <td className="py-2 px-2 border border-gray-300">{item.renstra_program}</td>
                       <td className="py-2 px-2 border border-gray-300">{item.renstra_kegiatan}</td>
+                      <td className="py-2 px-2 border border-gray-300">{item.sasaran_kegiatan}</td>
                       <td className="py-2 px-2 border border-gray-300">{item.renstra_sub_kegiatan}</td>
                       <td className="py-2 px-2 border border-gray-300">{item.sasaran_sub_kegiatan}</td>
                       <td className="py-2 px-2 border border-gray-300">{item.deskripsi_indikator}</td>
                       <td className="py-2 px-2 border border-gray-300">{item.satuan}</td>
                       <td className="py-2 px-2 border border-gray-300 text-center">{item.pk ? '✓' : '-'}</td>
                       <td className="py-2 px-2 border border-gray-300 text-center">{item.iku ? '✓' : '-'}</td>
-                      {/* <td className="py-2 px-2 border border-gray-300">{item.cara_pengukuran}</td> */}
                       <td className="py-2 px-2 border border-gray-300 text-center">{item.kondisi_awal}</td>
                       <td className="py-2 px-2 border border-gray-300 text-center">{item.target_tahun_1}</td>
                       <td className="py-2 px-2 border border-gray-300 text-center">{item.target_tahun_2}</td>
@@ -527,7 +666,7 @@ function LaporanRenstraPage() {
                       <td className="py-2 px-2 border border-gray-300 text-center">{item.target_tahun_4}</td>
                       <td className="py-2 px-2 border border-gray-300 text-center">{item.target_tahun_5}</td>
                       <td className="py-2 px-2 border border-gray-300 text-center">{item.kondisi_akhir}</td>
-                      {/* <td className="py-2 px-2 border border-gray-300 text-center">{item.target_renja}</td> */}
+                      <td className="py-2 px-2 border border-gray-300 text-center">{item.target_renja}</td>
                     </tr>
                   ))
                 ) : (

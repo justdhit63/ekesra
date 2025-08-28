@@ -13,7 +13,7 @@ function IndikatorPJAccordion({ indicator }) {
   // Ambil semua data pegawai untuk pilihan dropdown
   useEffect(() => {
     const fetchProfiles = async () => {
-      const { data } = await supabase.from('profiles').select('id, full_name').neq('role', 'admin');
+      const { data } = await supabase.from('penanggung_jawab').select('id, nama');
       if (data) setAllProfiles(data);
     };
     fetchProfiles();
@@ -24,7 +24,7 @@ function IndikatorPJAccordion({ indicator }) {
     setLoading(true);
     const { data } = await supabase
       .from('penanggung_jawab_indikator')
-      .select(`*, profiles(full_name)`)
+      .select(`*, penanggung_jawab(nama)`)
       .eq('indikator_id', indicator.id);
     if (data) setPicList(data);
     setLoading(false);
@@ -46,7 +46,7 @@ function IndikatorPJAccordion({ indicator }) {
       {
         // Buat ID sementara untuk key di React, ini tidak akan disimpan ke DB
         id: `new-${Date.now()}`,
-        profile_id: allProfiles[0].id,
+        penanggung_jawab_id: allProfiles[0].id,
         indikator_id: indicator.id,
         target_tahun_1: '', target_tahun_2: '', target_tahun_3: '',
         target_tahun_4: '', target_tahun_5: '',
@@ -90,7 +90,7 @@ function IndikatorPJAccordion({ indicator }) {
     // 2. Siapkan data baru dari state untuk disimpan (tanpa ID sementara)
     const newPicData = picList.map(pic => ({
       indikator_id: indicator.id,
-      profile_id: pic.profile_id,
+      penanggung_jawab_id: pic.penanggung_jawab_id,
       target_tahun_1: pic.target_tahun_1,
       target_tahun_2: pic.target_tahun_2,
       target_tahun_3: pic.target_tahun_3,
@@ -139,9 +139,6 @@ function IndikatorPJAccordion({ indicator }) {
                 <thead>
                   <tr className="">
                     <th className="border border-gray-300 border-b-2 border-b-black p-2 w-1/3">Penanggung Jawab</th>
-                    <th className="border border-gray-300 border-b-2 border-b-black p-2">Target {new Date().getFullYear()}</th>
-                    <th className="border border-gray-300 border-b-2 border-b-black p-2">Target {new Date().getFullYear() + 1}</th>
-                    <th className="border border-gray-300 border-b-2 border-b-black p-2">Target {new Date().getFullYear() + 2}</th>
                     <th className="border border-gray-300 border-b-2 border-b-black p-2">Aksi</th>
                   </tr>
                 </thead>
@@ -150,41 +147,14 @@ function IndikatorPJAccordion({ indicator }) {
                     <tr key={pic.id} className="text-center">
                       <td className="border border-gray-300 p-2 w-1/3">
                         <select
-                          value={pic.profile_id}
-                          onChange={(e) => handlePicChange(index, 'profile_id', e.target.value)}
+                          value={pic.penanggung_jawab_id}
+                          onChange={(e) => handlePicChange(index, 'penanggung_jawab_id', e.target.value)}
                           className="border p-2 rounded-md w-full"
                         >
                           {allProfiles.map(p => (
-                            <option key={p.id} value={p.id}>{p.full_name}</option>
+                            <option key={p.id} value={p.id}>{p.nama}</option>
                           ))}
                         </select>
-                      </td>
-                      <td className="border border-gray-300 p-2">
-                        <input
-                          type="text"
-                          placeholder={`Target ${new Date().getFullYear()}`}
-                          value={pic.target_tahun_1 || ''}
-                          onChange={(e) => handlePicChange(index, 'target_tahun_1', e.target.value)}
-                          className="border p-2 rounded-md w-full"
-                        />
-                      </td>
-                      <td className="border border-gray-300 p-2">
-                        <input
-                          type="text"
-                          placeholder={`Target ${new Date().getFullYear() + 1}`}
-                          value={pic.target_tahun_2 || ''}
-                          onChange={(e) => handlePicChange(index, 'target_tahun_2', e.target.value)}
-                          className="border p-2 rounded-md w-full"
-                        />
-                      </td>
-                      <td className="border border-gray-300 p-2">
-                        <input
-                          type="text"
-                          placeholder={`Target ${new Date().getFullYear() + 2}`}
-                          value={pic.target_tahun_3 || ''}
-                          onChange={(e) => handlePicChange(index, 'target_tahun_3', e.target.value)}
-                          className="border p-2 rounded-md w-full"
-                        />
                       </td>
                       <td className="border border-gray-300 p-2">
                         <button

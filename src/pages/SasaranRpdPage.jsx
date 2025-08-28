@@ -20,7 +20,7 @@ function SasaranRpdPage() {
         indikator_sasaran_rpd (
           *,
           pj_indikator_sasaran_rpd (
-            profiles ( full_name )
+            penanggung_jawab ( nama )
           )
         )
       `)
@@ -36,7 +36,7 @@ function SasaranRpdPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Sasaran RPD</h1>
+        <h1 className="text-2xl font-bold">Sasaran RPJMB</h1>
         <Link to="/rpd/sasaran/tambah" className="bg-green-600 text-white py-2 px-4 rounded inline-flex items-center">
           <FaPlus className="mr-2" /> Tambah Sasaran
         </Link>

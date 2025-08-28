@@ -46,7 +46,7 @@ function TujuanRpdAccordion({ tujuan, onDataChange }) {
 
         {isOpen && (
           <div className="p-4 border-l border-r border-b rounded-b-lg">
-            <h3 className="font-semibold mb-2">Indikator Tujuan RPD</h3>
+            <h3 className="font-semibold mb-2">Indikator Tujuan RPJMB</h3>
             {tujuan.indikator_tujuan_rpd.map(indikator => (
               <div key={indikator.id} className="mb-2 p-3 bg-gray-50 rounded shadow-sm">
                 <div className="flex justify-between items-start">
@@ -55,7 +55,7 @@ function TujuanRpdAccordion({ tujuan, onDataChange }) {
                         <p className="text-sm">
                             <strong>Penanggung Jawab:</strong> 
                             <span className="ml-1 text-gray-600">
-                                {indikator.pj_indikator_tujuan_rpd.map(pj => pj.profiles.full_name).join(', ') || 'Belum diatur'}
+                                {indikator.pj_indikator_tujuan_rpd.map(pj => pj.penanggung_jawab.nama).join(', ') || 'Belum diatur'}
                             </span>
                         </p>
                     </div>

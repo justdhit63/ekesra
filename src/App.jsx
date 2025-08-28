@@ -59,6 +59,7 @@ import TambahPerangkatDaerahPage from './pages/TambahPerangkatDaerahPage';
 import PKTriwulanSasaranPage from './pages/PKTriwulanSasaranPage';
 import PKTriwulanProgramPage from './pages/PKTriwulanProgramPage';
 import PKTriwulanKegiatanPage from './pages/PKTriwulanKegiatanPage';
+import CRUDPenanggungJawabPage from './pages/CRUDPenanggungJawabPage';
 
 // Buat halaman placeholder untuk contoh
 const LaporanPage = () => <div><h1>Halaman Laporan</h1></div>;
@@ -119,6 +120,16 @@ function App() {
           <ProtectedRoute session={session}>
             <Layout>
               <DetailPerencanaan session={session} />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/penanggung-jawab"
+        element={
+          <ProtectedRoute session={session}>
+            <Layout>
+              <CRUDPenanggungJawabPage session={session} />
             </Layout>
           </ProtectedRoute>
         }

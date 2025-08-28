@@ -12,7 +12,7 @@ function IndikatorPJProgramAccordion({ indicator }) {
 
   useEffect(() => {
     const fetchProfiles = async () => {
-      const { data } = await supabase.from('profiles').select('id, full_name').neq('role', 'admin');
+      const { data } = await supabase.from('penanggung_jawab').select('id, nama');
       if (data) setAllProfiles(data);
     };
     fetchProfiles();
@@ -22,7 +22,7 @@ function IndikatorPJProgramAccordion({ indicator }) {
     setLoading(true);
     const { data } = await supabase
       .from('penanggung_jawab_indikator_program')
-      .select(`*, profiles(full_name)`)
+      .select(`*, penanggung_jawab(nama)`)
       .eq('indikator_program_id', indicator.id);
     if (data) setPicList(data);
     setLoading(false);
@@ -34,7 +34,7 @@ function IndikatorPJProgramAccordion({ indicator }) {
 
   const handleAddPic = () => {
     if (allProfiles.length === 0) return;
-    setPicList([...picList, { id: `new-${Date.now()}`, profile_id: allProfiles[0].id }]);
+    setPicList([...picList, { id: `new-${Date.now()}`, penanggung_jawab_id: allProfiles[0].id }]);
   };
 
   const handleDeletePic = (index) => {
@@ -55,7 +55,7 @@ function IndikatorPJProgramAccordion({ indicator }) {
 
     const newPicData = picList.map(pic => ({
       indikator_program_id: indicator.id,
-      profile_id: pic.profile_id,
+      penanggung_jawab_id: pic.penanggung_jawab_id,
       target_tahun_1: pic.target_tahun_1,
       target_tahun_2: pic.target_tahun_2,
       target_tahun_3: pic.target_tahun_3,
@@ -92,9 +92,6 @@ function IndikatorPJProgramAccordion({ indicator }) {
                 <thead>
                   <tr className="bg-gray-100">
                     <th className="border border-gray-300 p-2">Penanggung Jawab</th>
-                    <th className="border border-gray-300 p-2">Target 2025</th>
-                    <th className="border border-gray-300 p-2">Target 2026</th>
-                    <th className="border border-gray-300 p-2">Target 2027</th>
                     <th className="border border-gray-300 p-2">Aksi</th>
                   </tr>
                 </thead>
@@ -103,43 +100,16 @@ function IndikatorPJProgramAccordion({ indicator }) {
                     <tr key={pic.id}>
                       <td className="border border-gray-300 p-2">
                         <select
-                          value={pic.profile_id}
-                          onChange={(e) => handlePicChange(index, 'profile_id', e.target.value)}
+                          value={pic.penanggung_jawab_id}
+                          onChange={(e) => handlePicChange(index, 'penanggung_jawab_id', e.target.value)}
                           className="w-full border p-2 rounded-md"
                         >
                           {allProfiles.map((p) => (
                             <option key={p.id} value={p.id}>
-                              {p.full_name}
+                              {p.nama}
                             </option>
                           ))}
                         </select>
-                      </td>
-                      <td className="border border-gray-300 p-2">
-                        <input
-                          type="text"
-                          placeholder="Target 2025"
-                          value={pic.target_tahun_1 || ''}
-                          onChange={(e) => handlePicChange(index, 'target_tahun_1', e.target.value)}
-                          className="w-full border p-2 rounded-md"
-                        />
-                      </td>
-                      <td className="border border-gray-300 p-2">
-                        <input
-                          type="text"
-                          placeholder="Target 2026"
-                          value={pic.target_tahun_2 || ''}
-                          onChange={(e) => handlePicChange(index, 'target_tahun_2', e.target.value)}
-                          className="w-full border p-2 rounded-md"
-                        />
-                      </td>
-                      <td className="border border-gray-300 p-2">
-                        <input
-                          type="text"
-                          placeholder="Target 2027"
-                          value={pic.target_tahun_3 || ''}
-                          onChange={(e) => handlePicChange(index, 'target_tahun_3', e.target.value)}
-                          className="w-full border p-2 rounded-md"
-                        />
                       </td>
                       <td className="border border-gray-300 p-2 text-center">
                         <button

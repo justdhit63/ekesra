@@ -19,7 +19,7 @@ function TujuanRpdPage() {
         indikator_tujuan_rpd (
           *,
           pj_indikator_tujuan_rpd (
-            profiles ( full_name )
+            penanggung_jawab ( nama )
           )
         )
       `)
@@ -35,7 +35,7 @@ function TujuanRpdPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Tujuan RPD</h1>
+        <h1 className="text-2xl font-bold">Tujuan RPJMB</h1>
         <Link to="/rpd/tujuan/tambah" className="bg-green-600 text-white py-2 px-4 rounded inline-flex items-center">
           <FaPlus className="mr-2" /> Tambah Tujuan
         </Link>
