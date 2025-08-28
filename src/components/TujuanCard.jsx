@@ -21,13 +21,13 @@ function TujuanCard({ tujuan, onDataChange }) {
 
   return (
     <div className="bg-white rounded-lg shadow-md mb-4">
-      <div className="w-full bg-blue-600 text-white p-3 flex justify-between items-center rounded-t-md">
+      <div className="w-full bg-green-800 text-white p-3 flex justify-between items-center rounded-t-md">
         <span className="font-semibold text-left">
           Tujuan: {tujuan.deskripsi_tujuan}
         </span>
         <div className="flex items-center space-x-2">
-            <Link to={`/renstra/tujuan/edit/${tujuan.id}`} className="p-1 hover:bg-blue-500 rounded"><FaEdit /></Link>
-            <button onClick={handleTujuanDelete} className="p-1 hover:bg-blue-500 rounded"><FaTrash /></button>
+            <Link to={`/renstra/tujuan/edit/${tujuan.id}`} className="p-1 hover:bg-green-700 rounded"><FaEdit /></Link>
+            <button onClick={handleTujuanDelete} className="p-1 hover:bg-green-700 rounded"><FaTrash /></button>
             <button onClick={() => setIsOpen(!isOpen)} className="p-1">
                 <FaChevronDown className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
             </button>
@@ -43,12 +43,12 @@ function TujuanCard({ tujuan, onDataChange }) {
               {/* <-- BAGIAN YANG DILENGKAPI: Tabel Indikator Sasaran --> */}
               <div className="overflow-x-auto mt-2">
                 <table className="min-w-full bg-white text-xs">
-                  <thead className="bg-gray-200">
+                  <thead className="bg-green-100">
                     <tr>
-                      <th className="py-1 px-2 border text-left font-semibold text-gray-600">Indikator Sasaran</th>
-                      <th className="py-1 px-2 border text-left font-semibold text-gray-600">Satuan</th>
-                      <th className="py-1 px-2 border text-center font-semibold text-gray-600">IKU</th>
-                      <th className="py-1 px-2 border text-left font-semibold text-gray-600">Target 2025</th>
+                      <th className="py-1 px-2 border text-left font-semibold text-green-800">Indikator Sasaran</th>
+                      <th className="py-1 px-2 border text-left font-semibold text-green-800">Satuan</th>
+                      <th className="py-1 px-2 border text-center font-semibold text-green-800">IKU</th>
+                      <th className="py-1 px-2 border text-left font-semibold text-green-800">Target 2025</th>
                     </tr>
                   </thead>
                   <tbody>

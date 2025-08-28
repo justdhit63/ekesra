@@ -133,7 +133,7 @@ const CRUDPenanggungJawabPage = () => {
                             className={`px-6 py-2 rounded-md text-white font-medium ${
                                 isEditing 
                                     ? 'bg-yellow-500 hover:bg-yellow-600' 
-                                    : 'bg-blue-500 hover:bg-blue-600'
+                                    : 'bg-green-500 hover:bg-green-600'
                             } transition duration-200`}
                         >
                             {isEditing ? 'Update' : 'Tambah'}

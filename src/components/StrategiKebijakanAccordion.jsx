@@ -36,7 +36,7 @@ function StrategiKebijakanAccordion({ strategi, onDataChange }) {
     <div className="bg-white rounded-lg shadow-md">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full bg-blue-600 text-white p-3 flex justify-between items-center rounded-t-lg"
+        className="w-full bg-green-800 text-white p-3 flex justify-between items-center rounded-t-lg"
       >
         <span className="font-semibold text-left">» Strategi PD: {strategi.deskripsi_strategi}</span>
         <FaChevronDown className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
@@ -75,7 +75,7 @@ function StrategiKebijakanAccordion({ strategi, onDataChange }) {
               ></textarea>
               <div className="flex justify-end space-x-2 mt-2">
                 <button onClick={() => setIsAdding(false)} className="bg-gray-200 text-gray-800 py-1 px-3 rounded text-sm">Batal</button>
-                <button onClick={handleSaveNewKebijakan} className="bg-green-600 text-white py-1 px-3 rounded text-sm">Simpan</button>
+                <button onClick={handleSaveNewKebijakan} className="bg-green-700 text-white py-1 px-3 rounded text-sm">Simpan</button>
               </div>
             </div>
           )}
@@ -83,7 +83,7 @@ function StrategiKebijakanAccordion({ strategi, onDataChange }) {
           {!isAdding && (
             <button
               onClick={() => setIsAdding(true)}
-              className="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded inline-flex items-center text-sm"
+              className="mt-4 bg-green-700 hover:bg-green-800 text-white font-bold py-1 px-3 rounded inline-flex items-center text-sm"
             >
               <FaPlus className="mr-2" />
               Tambah Poin

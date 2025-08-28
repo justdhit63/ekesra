@@ -104,7 +104,7 @@ function App() {
     <Routes>
       <Route path="/welcome" element={<WelcomePage />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignUpPage />} />
+      {/* <Route path="/signup" element={<SignUpPage />} /> */}
 
       {/* Rute yang dilindungi dan menggunakan Layout */}
       <Route

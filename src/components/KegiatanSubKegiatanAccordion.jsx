@@ -41,12 +41,12 @@ function KegiatanSubKegiatanAccordion({ kegiatan, onDataChange }) {
 
   return (
     <div className="bg-white rounded-lg shadow-md">
-      <div className="w-full bg-blue-600 text-white p-3 flex justify-between items-center rounded-t-lg">
+      <div className="w-full bg-green-800 text-white p-3 flex justify-between items-center rounded-t-lg">
         <span className="font-semibold text-left">» Kegiatan: {kegiatan.deskripsi_kegiatan}</span>
         {/* -- TOMBOL AKSI UNTUK KEGIATAN -- */}
         <div className="flex items-center space-x-2">
-            <Link to={`/renstra/kegiatan/edit/${kegiatan.id}`} className="p-1 hover:bg-blue-500 rounded"><FaEdit /></Link>
-            <button onClick={handleKegiatanDelete} className="p-1 hover:bg-blue-500 rounded"><FaTrash /></button>
+            <Link to={`/renstra/kegiatan/edit/${kegiatan.id}`} className="p-1 hover:bg-green-700 rounded"><FaEdit /></Link>
+            <button onClick={handleKegiatanDelete} className="p-1 hover:bg-green-700 rounded"><FaTrash /></button>
             <button onClick={() => setIsOpen(!isOpen)} className="p-1">
                 <FaChevronDown className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
             </button>

@@ -1,12 +1,12 @@
-// src/pages/RenstraKebijakanPage.jsx
+// src/pages/RenstraStrategiPage.jsx
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import StrategiKebijakanAccordion from '../components/StrategiKebijakanAccordion';
 
-function RenstraKebijakanPage() {
+function RenstraStrategiPage() {
   const [perangkatDaerahList, setPerangkatDaerahList] = useState([]);
   const [selectedDaerahId, setSelectedDaerahId] = useState('');
-  const [strategiData, setStrategiData] = useState([]);
+  const [sasaranData, setSasaranData] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -20,26 +20,27 @@ function RenstraKebijakanPage() {
     fetchPerangkatDaerah();
   }, []);
 
-  // <-- DIUBAH: Menggunakan fungsi RPC yang baru -->
-  const fetchStrategiDanKebijakan = async () => {
+  // <-- DIUBAH: Menggunakan fungsi RPC yang baru dan benar -->
+  const fetchSasaranDanStrategi = async () => {
     if (!selectedDaerahId) return;
     setLoading(true);
-
+    
+    // Panggil fungsi PostgreSQL yang sudah kita buat
     const { data, error } = await supabase.rpc('get_kebijakan_by_pd', {
       pd_id: selectedDaerahId
     });
 
     if (data) {
-      setStrategiData(data);
+      setSasaranData(data);
     } else {
-      setStrategiData([]);
+      setSasaranData([]);
       console.error(error);
     }
     setLoading(false);
   };
 
   useEffect(() => {
-    fetchStrategiDanKebijakan();
+    fetchSasaranDanStrategi();
   }, [selectedDaerahId]);
 
   return (
@@ -48,7 +49,7 @@ function RenstraKebijakanPage() {
 
       <div className="bg-white p-6 rounded-lg shadow-md mb-6">
         <div className="flex items-center justify-between">
-          <div className="mb-6 w-full md:w-1/2">
+          <div className="w-full md:w-1/2 mb-6">
             <label className="block text-sm font-medium text-gray-700">Perangkat Daerah</label>
             <select
               value={selectedDaerahId}
@@ -60,17 +61,17 @@ function RenstraKebijakanPage() {
               ))}
             </select>
           </div>
-          <h2 className="text-lg font-medium hidden md:block">Renstra Kebijakan Periode 2025-2029</h2>
+          <h1 className='text-lg font-medium hidden md:block'>Renstra Kebijakan Periode 2025-2029</h1>
         </div>
 
         {loading ? <p className="text-center">Memuat data...</p> : (
           <div className="space-y-4">
-            {strategiData.length > 0 ? (
-                strategiData.map(strategi => (
+            {sasaranData.length > 0 ? (
+                sasaranData.map(sasaran => (
                 <StrategiKebijakanAccordion
-                    key={strategi.id}
-                    strategi={strategi}
-                    onDataChange={fetchStrategiDanKebijakan}
+                    key={sasaran.id}
+                    strategi={sasaran}
+                    onDataChange={fetchSasaranDanStrategi}
                 />
                 ))
             ) : (
@@ -83,4 +84,4 @@ function RenstraKebijakanPage() {
   );
 }
 
-export default RenstraKebijakanPage;
+export default RenstraStrategiPage;

@@ -33,7 +33,7 @@ function TujuanRpdAccordion({ tujuan, onDataChange }) {
   return (
     <>
       <div className="bg-white rounded-lg shadow-md">
-        <div className="w-full bg-blue-600 text-white p-3 flex justify-between items-center rounded-t-lg">
+        <div className="w-full bg-green-700 text-white p-3 flex justify-between items-center rounded-t-lg">
           <span className="font-semibold text-left">» {tujuan.deskripsi}</span>
           <div className="flex items-center space-x-2">
               {/* <Link to={`/rpd/tujuan/edit/${tujuan.id}`} className="bg-yellow-500 hover:bg-yellow-600 text-white p-2 rounded"><FaEdit /></Link> */}
@@ -59,13 +59,13 @@ function TujuanRpdAccordion({ tujuan, onDataChange }) {
                             </span>
                         </p>
                     </div>
-                    <button onClick={() => openModal(indikator)} className="text-blue-600 hover:text-blue-800 text-xs font-semibold">
+                    <button onClick={() => openModal(indikator)} className="text-green-700 hover:text-green-800 text-xs font-semibold">
                         Kelola PJ
                     </button>
                 </div>
               </div>
             ))}
-            <Link to={`/rpd/tujuan/${tujuan.id}/tambah-indikator`} className="text-blue-600 hover:text-blue-800 text-sm mt-2 inline-flex items-center font-semibold">
+            <Link to={`/rpd/tujuan/${tujuan.id}/tambah-indikator`} className="text-green-700 hover:text-green-800 text-sm mt-2 inline-flex items-center font-semibold">
                 <FaPlus size={12} className="inline mr-1"/> Tambah Indikator
             </Link>
           </div>

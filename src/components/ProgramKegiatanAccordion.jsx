@@ -30,7 +30,7 @@ function ProgramKegiatanAccordion({ program, onDataChange }) {
     <div className="bg-white rounded-lg shadow-md">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full bg-blue-600 text-white p-3 flex justify-between items-center rounded-t-lg"
+        className="w-full bg-green-800 text-white p-3 flex justify-between items-center rounded-t-lg hover:bg-green-900"
       >
         <span className="font-semibold text-left">» Program PD: {program.deskripsi_program}</span>
         <FaChevronDown className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
@@ -40,15 +40,15 @@ function ProgramKegiatanAccordion({ program, onDataChange }) {
         <div className="p-4 border-l border-r border-b rounded-b-lg border-gray-200">
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white text-sm">
-              <thead className="bg-gray-50">
+              <thead className="bg-green-50">
                 <tr>
-                  <th className="py-2 px-4 border text-left font-semibold text-gray-700">Kegiatan</th>
-                  <th className="py-2 px-4 border text-left font-semibold text-gray-700">Anggaran 2025</th>
-                  <th className="py-2 px-4 border text-left font-semibold text-gray-700">Anggaran 2026</th>
-                  <th className="py-2 px-4 border text-left font-semibold text-gray-700">Anggaran 2027</th>
-                  <th className="py-2 px-4 border text-left font-semibold text-gray-700">Anggaran 2028</th>
-                  <th className="py-2 px-4 border text-left font-semibold text-gray-700">Anggaran 2029</th>
-                  <th className="py-2 px-4 border text-center font-semibold text-gray-700">Aksi</th>
+                  <th className="py-2 px-4 border text-left font-semibold text-green-800">Kegiatan</th>
+                  <th className="py-2 px-4 border text-left font-semibold text-green-800">Anggaran 2025</th>
+                  <th className="py-2 px-4 border text-left font-semibold text-green-800">Anggaran 2026</th>
+                  <th className="py-2 px-4 border text-left font-semibold text-green-800">Anggaran 2027</th>
+                  <th className="py-2 px-4 border text-left font-semibold text-green-800">Anggaran 2028</th>
+                  <th className="py-2 px-4 border text-left font-semibold text-green-800">Anggaran 2029</th>
+                  <th className="py-2 px-4 border text-center font-semibold text-green-800">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -56,7 +56,7 @@ function ProgramKegiatanAccordion({ program, onDataChange }) {
                 {/* Tambahkan pengecekan apakah program.renstra_kegiatan ada dan tidak kosong */}
                 {program.renstra_kegiatan && program.renstra_kegiatan.length > 0 ? (
                   program.renstra_kegiatan.map(kegiatan => (
-                    <tr key={kegiatan.id} className="hover:bg-gray-50">
+                    <tr key={kegiatan.id} className="hover:bg-green-50">
                       <td className="py-2 px-4 border font-medium">{kegiatan.deskripsi_kegiatan}</td>
                       <td className="py-2 px-4 border">{formatRupiah(kegiatan.anggaran_tahun_1)}</td>
                       <td className="py-2 px-4 border">{formatRupiah(kegiatan.anggaran_tahun_2)}</td>
